@@ -1,0 +1,100 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta name="theme-color" content="#102a43"><title>牛草山云海预测器 V0.2</title>
+<style>
+:root{--navy:#102a43;--blue:#286b83;--ink:#183044;--muted:#617789;--line:#dbe5e9;--gold:#d7a84b;--bg:#f3f6f7}
+*{box-sizing:border-box}body{margin:0;background:var(--bg);color:var(--ink);font-family:system-ui,-apple-system,"PingFang SC","Microsoft YaHei",sans-serif;line-height:1.5}.wrap{max-width:780px;margin:auto;padding:15px 13px 34px}
+.hero{color:white;background:linear-gradient(145deg,#102a43,#286b83);padding:23px 19px;border-radius:22px;position:relative;overflow:hidden}.hero:after{content:"☁";position:absolute;right:12px;top:-25px;font-size:130px;opacity:.12}.kicker{font-size:11px;letter-spacing:2px;opacity:.8}.hero h1{font-size:27px;line-height:1.2;margin:8px 0}.hero p{font-size:13px;opacity:.9;margin:8px 0 0}.pill{display:inline-block;border:1px solid #ffffff55;border-radius:999px;padding:4px 9px;font-size:12px;margin-top:13px}
+.card{background:white;border:1px solid var(--line);border-radius:18px;padding:15px;margin-top:12px;box-shadow:0 4px 16px #102a4308}.row{display:flex;align-items:center;justify-content:space-between;gap:10px}.muted{color:var(--muted);font-size:13px}.small{font-size:11px;color:var(--muted)}h2{font-size:17px;margin:0 0 12px}h3{font-size:14px;margin:0}.score{font-size:48px;font-weight:760;line-height:1;letter-spacing:-2px}.score small{font-size:14px;letter-spacing:0;font-weight:500}.meter{height:9px;border-radius:99px;background:#e8eef0;overflow:hidden;margin:12px 0 8px}.meter i{display:block;height:100%;width:0;background:linear-gradient(90deg,#a9c7ce,#d7a84b)}.status{font-weight:700;color:var(--blue)}button{font:inherit;border:0;border-radius:12px;padding:11px 14px;background:var(--navy);color:white;font-weight:650;cursor:pointer}button.secondary{background:#eaf1f3;color:var(--navy)}button:disabled{opacity:.5}.grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:8px}.metric{padding:11px;background:#f5f8f9;border-radius:12px}.metric b{font-size:19px;display:block;margin-top:3px}.hours{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:6px}.hour{background:#f5f8f9;padding:9px 5px;border-radius:11px;text-align:center;min-width:0}.hour b{display:block;font-size:16px}.hour span{font-size:10px;color:var(--muted);display:block;overflow-wrap:anywhere}.modelgrid{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:7px}.model{padding:10px 8px;border:1px solid var(--line);border-radius:12px}.model b{font-size:20px;display:block}.model span{font-size:11px;color:var(--muted)}label{font-size:12px;color:var(--muted);display:block;margin-bottom:4px}input{width:100%;padding:9px;border:1px solid var(--line);border-radius:10px;font:inherit;color:var(--ink)}.formgrid{display:grid;grid-template-columns:1fr 1fr;gap:9px}ul{padding-left:18px;margin:8px 0}li{margin:5px 0}.notice{background:#fff8e8;border:1px solid #f1dfb5;border-radius:13px;padding:11px;font-size:12px}.ok{color:#28765d}.warn{color:#986414}.bad{color:#a13c3c}.footer{font-size:11px;color:var(--muted);margin:15px 4px 0}#err{color:#a33;font-size:12px;margin-top:8px;display:none}.tag{font-size:11px;background:#eaf1f3;border-radius:6px;padding:3px 6px}
+@media(min-width:600px){.wrap{padding:24px}.hero{padding:30px}.hero h1{font-size:32px}.grid{grid-template-columns:repeat(4,minmax(0,1fr))}}
+</style></head><body><main class="wrap">
+<header class="hero"><div class="kicker">MOUNTAIN CLOUD WATCH · BETA 0.2</div><h1>牛草山云海预测器</h1><p>安徽岳西 · 目标时段：日出前后 05:00–08:00</p><span class="pill">多模式交叉比较 · 条件指数 · 出发前复核</span></header>
+
+<section class="card"><div class="row"><div><h2>本次判断</h2><div id="updated" class="muted">正在读取天气预报…</div></div><button id="refresh">刷新</button></div>
+<div class="row" style="align-items:flex-end;margin-top:13px"><div><div class="score"><span id="score">—</span><small>/100</small></div><div class="muted">云海条件指数（启发式）</div></div><div style="text-align:right"><div id="verdict" class="status">等待数据</div><div id="confidence" class="small">尚未评估</div></div></div><div class="meter"><i id="bar"></i></div><div id="summary" class="muted">等待逐小时数据。指数不是经过历史样本校准的云海概率。</div><div id="err"></div></section>
+
+<section class="card"><h2>多模式一致性</h2><div class="modelgrid">
+<div class="model"><span>综合预报</span><b id="bestScore">—</b><span id="bestLabel">Open-Meteo Best Match</span></div>
+<div class="model"><span>ECMWF 模式</span><b id="ecmwfScore">—</b><span id="ecmwfLabel">等待数据</span></div>
+<div class="model"><span>GFS 模式</span><b id="gfsScore">—</b><span id="gfsLabel">等待数据</span></div>
+</div><p id="agreement" class="muted" style="margin-bottom:0;margin-top:10px">不同模式结果将用于评估趋势是否一致，不会把模式数量直接换算成概率。</p></section>
+
+<section class="card"><h2>清晨逐小时条件 · 综合预报</h2><div id="hours" class="hours"><div class="hour">等待数据</div></div><p class="small" style="margin-bottom:0;margin-top:9px">低云量高可能意味着谷底云海，也可能意味着观景点被雾包住；需要结合能见度、风和实况判断。</p></section>
+
+<section class="card"><h2>关键气象信号</h2><div class="grid">
+<div class="metric"><span class="small">低云量（均值）</span><b id="low">—</b></div><div class="metric"><span class="small">相对湿度（均值）</span><b id="rh">—</b></div>
+<div class="metric"><span class="small">降水概率（均值）</span><b id="rain">—</b></div><div class="metric"><span class="small">风速（均值）</span><b id="wind">—</b></div>
+</div><div id="signals" class="muted" style="margin-top:11px">数据加载后显示。</div></section>
+
+<section class="card"><h2>出发前复核清单</h2><ul>
+<li><b>周五晚：</b>只做趋势初筛，暂不因单次预报决定出发。</li>
+<li><b>周六 12:00–18:00：</b>比较综合、ECMWF、GFS 三套预报，重点看夜间降水、低云和风速。</li>
+<li><b>周六 20:00–22:00：</b>最后复核。若模式差异很大，视为不确定性高；若持续降雨、强风或低能见度，不建议为云海专程夜驾。</li>
+<li><b>周日出发前：</b>核对景区开放、道路和现场实况；雾、湿滑路面、疲劳驾驶优先级高于云海。</li></ul><div class="notice">本页面不会在后台自动推送提醒。建议在手机日历手动设置周六 20:00 提醒；刷新网页才会获取新一轮预报。</div></section>
+
+<section class="card"><h2>位置与时间设置</h2><p class="muted">默认坐标为牛草山附近的近似点，不保证等于实际观景平台。Open-Meteo 可按指定海拔做统计降尺度，但网格预报仍不等于山顶实测。<a href="https://open-meteo.com/en/docs" target="_blank" rel="noreferrer">变量与接口说明</a></p>
+<div class="formgrid"><div><label for="lat">纬度</label><input id="lat" type="number" step=".0001" value="30.9400"></div><div><label for="lon">经度</label><input id="lon" type="number" step=".0001" value="116.1500"></div><div><label for="elev">观景点海拔（米）</label><input id="elev" type="number" value="1442"></div><div><label for="date">目标日期</label><input id="date" type="date" value="2026-10-25"></div></div><button id="apply" style="width:100%;margin-top:11px">按设置重新预测</button></section>
+
+<div class="footer">数据源：Open-Meteo Forecast API 的 Best Match、ECMWF 与 GFS 模式接口。公开 API 文档说明 Best Match 会按地点组合适用模式；不同模型变量覆盖和分辨率不同。此工具仅供旅行决策辅助，不用于安全关键决策。<br><br>模型版本 0.2：透明规则评分 + 多模式对比；未使用牛草山历史云海实况训练，未经过概率校准。指数 70 分不等于 70% 概率。天气模型对山谷地形、云底高度和局地风场的刻画有限。</div>
+</main>
+<script>
+const $=id=>document.getElementById(id), hrs=[5,6,7,8];
+const endpoints=[{key:'best',name:'综合预报',url:'https://api.open-meteo.com/v1/forecast',model:'best_match'},{key:'ecmwf',name:'ECMWF',url:'https://api.open-meteo.com/v1/ecmwf'},{key:'gfs',name:'GFS',url:'https://api.open-meteo.com/v1/gfs'}];
+const vars='temperature_2m,relative_humidity_2m,dew_point_2m,precipitation_probability,precipitation,cloud_cover,cloud_cover_low,wind_speed_10m,visibility';
+function avg(a){let x=a.filter(v=>v!==null&&v!==undefined&&!Number.isNaN(Number(v))).map(Number);return x.length?x.reduce((p,c)=>p+c,0)/x.length:null}
+function fmt(v,s='',d=0){return v===null||v===undefined||Number.isNaN(v)?'—':Number(v).toFixed(d)+s}
+function calc(j,date){
+ const h=j.hourly;if(!h?.time)throw Error('没有逐小时数据');
+ const idx=hrs.map(hr=>h.time.findIndex(t=>t===date+'T'+String(hr).padStart(2,'0')+':00')).filter(i=>i>=0);if(!idx.length)throw Error('该日期超出当前模式可用预报范围');
+ const get=k=>idx.map(i=>h[k]?.[i]).filter(v=>v!==null&&v!==undefined);
+ const x={idx,h,rh:avg(get('relative_humidity_2m')),low:avg(get('cloud_cover_low')),total:avg(get('cloud_cover')),rainp:avg(get('precipitation_probability')),precip:avg(get('precipitation')),wind:avg(get('wind_speed_10m')),temp:avg(get('temperature_2m')),dew:avg(get('dew_point_2m')),vis:avg(get('visibility'))};
+ x.spread=x.temp!==null&&x.dew!==null?x.temp-x.dew:null;
+ // 仅为可解释的条件指数。避免把指数命名为概率。
+ let s=0;if(x.rh!==null)s+=Math.max(0,Math.min(25,(x.rh-65)*.75));
+ if(x.low!==null)s+=x.low>=25&&x.low<=75?22:x.low>75?10:5;
+ if(x.rainp!==null)s+=x.rainp>=20&&x.rainp<=60?12:x.rainp>60?4:8;
+ if(x.precip!==null)s+=x.precip>1?-10:x.precip>.1?-4:8;
+ if(x.wind!==null)s+=x.wind<=12?15:x.wind<=22?8:x.wind<=35?0:-12;
+ if(x.spread!==null)s+=x.spread<=2?12:x.spread<=4?8:x.spread<=7?3:0;
+ if(x.total!==null)s+=x.total>=35&&x.total<=85?8:x.total>90?-4:2;
+ x.score=Math.max(0,Math.min(100,Math.round(s)));return x;
+}
+function category(s){return s>=70?'条件较有利':s>=50?'条件一般':s>=30?'条件偏弱':'当前信号不利'}
+async function fetchModel(e,lat,lon,elev,date){
+ const u=new URL(e.url);u.search=new URLSearchParams({latitude:lat,longitude:lon,elevation:elev,hourly:vars,timezone:'Asia/Shanghai',start_date:date,end_date:date,...(e.model?{models:e.model}:{})}).toString();
+ const r=await fetch(u);if(!r.ok)throw Error(e.name+' 接口返回 '+r.status);return calc(await r.json(),date);
+}
+async function load(){
+ $('refresh').disabled=true;$('apply').disabled=true;$('err').style.display='none';$('updated').textContent='正在读取三个天气预报来源…';
+ try{
+  const lat=Number($('lat').value),lon=Number($('lon').value),elev=Number($('elev').value),date=$('date').value;
+  const settled=await Promise.allSettled(endpoints.map(e=>fetchModel(e,lat,lon,elev,date))), data={};
+  settled.forEach((r,i)=>{if(r.status==='fulfilled')data[endpoints[i].key]=r.value});
+  if(!data.best&&!data.ecmwf&&!data.gfs)throw Error('所有天气接口均未返回有效数据。请检查网络或稍后重试。');
+  const base=data.best||data.ecmwf||data.gfs, available=Object.keys(data);
+  $('score').textContent=base.score;$('bar').style.width=base.score+'%';$('verdict').textContent=category(base.score);
+  const scores=available.map(k=>data[k].score), spread=Math.max(...scores)-Math.min(...scores);
+  $('confidence').textContent=available.length<2?'仅单一模式：不确定性较高':spread<=12?'模式趋势较一致':spread<=25?'模式有一定分歧':'模式分歧较大';
+  $('summary').textContent='条件指数 '+base.score+'/100。该分数不是云海概率；还需判断云底是否低于观景点，以及山顶是否被雾覆盖。';
+  $('bestScore').textContent=data.best?data.best.score:'—';$('ecmwfScore').textContent=data.ecmwf?data.ecmwf.score:'—';$('gfsScore').textContent=data.gfs?data.gfs.score:'—';
+  $('bestLabel').textContent=data.best?'综合模式可用':'接口暂不可用';$('ecmwfLabel').textContent=data.ecmwf?category(data.ecmwf.score):'接口暂不可用';$('gfsLabel').textContent=data.gfs?category(data.gfs.score):'接口暂不可用';
+  $('agreement').textContent=available.length>=2?'模式指数跨度 '+spread+' 分。'+(spread<=12?'当前模式趋势较一致，但不代表预测一定正确。':spread<=25?'建议把这次预测视为中等不确定性，周六晚再次检查。':'模式差异明显，建议观望并临近复核。'):'当前仅有 '+available.length+' 套模式成功，不能做交叉验证。';
+  $('low').textContent=fmt(base.low,'%');$('rh').textContent=fmt(base.rh,'%');$('rain').textContent=fmt(base.rainp,'%');$('wind').textContent=fmt(base.wind,' km/h');
+  const notes=[];if(base.rh!==null)notes.push(base.rh>=85?'湿度高，有利于雾/云形成':'近地面湿度信号不算特别高');
+  if(base.low!==null)notes.push(base.low>80?'低云覆盖很高：可能有云海，也可能观景点被雾包住':base.low>=25?'存在一定低云信号':'低云信号偏弱');
+  if(base.precip!==null&&base.precip>.5)notes.push('清晨有降水信号，需关注能见度和道路安全');
+  if(base.wind!==null&&base.wind>25)notes.push('风较大，云层可能快速变化');
+  if(base.spread!==null)notes.push('气温与露点差约 '+base.spread.toFixed(1)+'°C');
+  if(base.vis!==null)notes.push('模式能见度约 '+(base.vis/1000).toFixed(1)+' km（网格估算）');
+  $('signals').textContent=notes.join('；')+'。';
+  $('hours').innerHTML=base.idx.map(i=>{const h=base.h,t=h.time[i].slice(11,16),c=h.cloud_cover?.[i],l=h.cloud_cover_low?.[i],p=h.precipitation_probability?.[i],w=h.wind_speed_10m?.[i],r=h.relative_humidity_2m?.[i];return `<div class="hour"><span>${t}</span><b>${c==null?'—':Math.round(c)+'%'}</b><span>总云量</span><span>低云 ${l==null?'—':Math.round(l)+'%'}</span><span>湿度 ${r==null?'—':Math.round(r)+'%'}</span><span>雨 ${p==null?'—':Math.round(p)+'%'}</span><span>风 ${w==null?'—':Math.round(w)}</span></div>`}).join('');
+  $('updated').textContent='刷新于 '+new Date().toLocaleString('zh-CN',{hour12:false})+' · 成功读取 '+available.length+'/3 套模式';
+  const fails=settled.map((r,i)=>r.status==='rejected'?endpoints[i].name+'：'+r.reason.message:null).filter(Boolean);
+  if(fails.length){$('err').style.display='block';$('err').textContent='部分模式未返回：'+fails.join('；')}
+ }catch(e){$('err').style.display='block';$('err').textContent=e.message||'获取数据失败';$('updated').textContent='数据未完整更新'}
+ finally{$('refresh').disabled=false;$('apply').disabled=false}
+}
+$('refresh').addEventListener('click',load);$('apply').addEventListener('click',load);load();
+</script></body></html>
