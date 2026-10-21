@@ -1,6 +1,4 @@
-from pathlib import Path
 
-html = r'''<!doctype html>
 <html lang="zh-CN">
 <head>
 <meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
@@ -99,7 +97,3 @@ async function load(){
 }
 const today=localDate();$('date').min=today;$('date').max=addDays(today,15);$('date').value=addDays(today,1);$('refresh').addEventListener('click',load);$('apply').addEventListener('click',load);$('today').addEventListener('click',()=>{$('date').value=localDate();load()});load();
 </script></body></html>'''
-
-path = Path("/mnt/data/niucaoshan_cloud_watch_v3.html")
-path.write_text(html, encoding="utf-8")
-print(f"已生成：{path.name}（{path.stat().st_size:,} bytes）")
