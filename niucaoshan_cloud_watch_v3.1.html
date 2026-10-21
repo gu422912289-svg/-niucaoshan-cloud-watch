@@ -277,4 +277,48 @@ const today=localDate();$('date').min=today;$('date').max=addDays(today,15);$('d
   }
 </style>
 <div class="fengge-watermark">锋哥出品</div>
+<section id="v32Panel" class="card" style="max-width:850px;margin:14px auto;padding:16px">
+<h2>V3.2 垂直湿度与逆温联合诊断（测试）</h2>
+<p class="muted">分别读取 ECMWF 与 GFS 的气压层温度、湿度和位势高度；高湿层不是实测云层，逆温也不代表一定有云海。</p>
+<button id="v32Run" type="button">分析当前日期</button>
+<div id="v32Status" class="small" style="margin:10px 0">等待分析</div>
+<div id="v32Result"></div>
+</section>
+<script>
+(function(){
+const el=id=>document.getElementById(id);
+const models=[
+ {name:'ECMWF',url:'https://api.open-meteo.com/v1/ecmwf',levels:[1000,925,850,700,500]},
+ {name:'GFS',url:'https://api.open-meteo.com/v1/gfs',levels:[1000,975,950,925,900,875,850,825,800,775,750,725,700,675,650,625,600,575,550,525,500]}
+];
+const fmt=n=>Number.isFinite(n)?n.toFixed(0):'—';
+function esc(s){return String(s).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));}
+async function fetchModel(m,lat,lon,date){
+ const vars=m.levels.flatMap(l=>['temperature_'+l+'hPa','relative_humidity_'+l+'hPa','geopotential_height_'+l+'hPa']);
+ const url=new URL(m.url);url.search=new URLSearchParams({latitude:String(lat),longitude:String(lon),hourly:vars.join(','),timezone:'Asia/Shanghai',start_date:date,end_date:date}).toString();
+ const resp=await fetch(url);const data=await resp.json();if(!resp.ok||data.error)throw Error(data.reason||'接口失败');
+ const times=data.hourly?.time||[];let idx=times.findIndex(t=>t.startsWith(date)&&t.endsWith('05:00'));if(idx<0)idx=times.findIndex(t=>t.startsWith(date));if(idx<0)throw Error('无对应时次');
+ const pts=m.levels.map(l=>({level:l,t:data.hourly['temperature_'+l+'hPa']?.[idx],h:data.hourly['geopotential_height_'+l+'hPa']?.[idx],rh:data.hourly['relative_humidity_'+l+'hPa']?.[idx]})).filter(p=>Number.isFinite(p.t)&&Number.isFinite(p.h)&&p.t>=-100&&p.t<=65&&p.h>=-500&&p.h<=35000).sort((a,b)=>a.h-b.h);
+ if(pts.length<2)throw Error('有效气压层不足');return {name:m.name,pts,time:times[idx]};
+}
+function render(d,obs){
+ const p=d.pts, high=p.filter(x=>Number.isFinite(x.rh)&&x.rh>=90),near=p.reduce((a,b)=>Math.abs(b.h-obs)<Math.abs(a.h-obs)?b:a);
+ const inversions=[];for(let i=0;i<p.length-1;i++){const a=p[i],b=p[i+1],dh=b.h-a.h,dt=b.t-a.t;if(dh>20&&dt>0.2)inversions.push({a,b,rate:dt/dh*100});}
+ const covering=inversions.filter(z=>z.a.h<=obs&&obs<=z.b.h);
+ const humidityNear=Number.isFinite(near.rh)?near.rh.toFixed(0)+'%':'缺失';
+ const invText=covering.length?'观景高度位于已识别逆温层段内':'观景高度不在已识别逆温层段内';
+ const highText=high.length?high.map(x=>fmt(x.h)+'m ('+fmt(x.rh)+'%)').join('、'):'没有气压层达到90%相对湿度（不排除层间薄云雾）';
+ return '<div class="metric" style="margin:10px 0"><b>'+d.name+' · '+esc(d.time.slice(11,16))+'</b><div class="small">'+invText+'；逆温层段 '+inversions.length+' 个；最接近观景高度的采样层：'+fmt(near.h)+'m，RH '+humidityNear+'</div><div class="small">RH≥90% 的采样层：'+highText+'</div><div class="small">注意：仅是离散模式气压层，不能据此确定云顶或云底。</div></div>'+
+ '<details><summary>'+d.name+' 全部有效层（'+p.length+'）</summary><div style="overflow-x:auto"><table style="width:100%;font-size:12px"><thead><tr><th>hPa</th><th>高度m</th><th>温度℃</th><th>RH%</th></tr></thead><tbody>'+p.map(x=>'<tr><td>'+x.level+'</td><td>'+fmt(x.h)+'</td><td>'+x.t.toFixed(1)+'</td><td>'+fmt(x.rh)+'</td></tr>').join('')+'</tbody></table></div></details>';
+}
+async function run(){const btn=el('v32Run'),status=el('v32Status'),out=el('v32Result');btn.disabled=true;status.textContent='正在查询气压层湿度…';out.innerHTML='';try{
+ const lat=Number(el('lat').value),lon=Number(el('lon').value),obs=Number(el('elev').value),date=el('date').value;
+ if(!date||!Number.isFinite(lat)||!Number.isFinite(lon)||!Number.isFinite(obs))throw Error('请检查日期、坐标和海拔');
+ const settled=await Promise.allSettled(models.map(m=>fetchModel(m,lat,lon,date)));
+ let success=0;settled.forEach((r,i)=>{if(r.status==='fulfilled'){success++;out.innerHTML+=render(r.value,obs)}else{out.innerHTML+='<p class="small">'+models[i].name+'：'+esc(r.reason?.message||'读取失败')+'</p>'}});
+ status.textContent=date+' · 观景高度 '+obs+'m · '+success+'/2 套模式可用。高湿层仅是云雾候选信号，不是云海概率。';
+ }catch(e){status.textContent='分析失败：'+e.message}finally{btn.disabled=false}}
+ el('v32Run').addEventListener('click',run);
+})();
+</script>
 </body></html>
