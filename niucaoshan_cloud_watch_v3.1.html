@@ -179,7 +179,7 @@ const today=localDate();$('date').min=today;$('date').max=addDays(today,15);$('d
   const minH=Math.min(...all.map(p=>p.h),observer);
   const maxH=Math.max(...all.map(p=>p.h),observer);
   const minT=Math.floor(Math.min(...all.map(p=>p.t))-1);
-  const maxT=Math.ceil(Math.max(...all.map(p=>p.t)+1));
+  const maxT=Math.ceil(Math.max(...all.map(p=>p.t))+1);
   const W=640,H=340,L=58,R=18,T=22,B=42,iw=W-L-R,ih=H-T-B;
   const x=v=>L+(v-minT)/(Math.max(1,maxT-minT))*iw;
   const y=v=>T+ih-(v-minH)/(Math.max(1,maxH-minH))*ih;
