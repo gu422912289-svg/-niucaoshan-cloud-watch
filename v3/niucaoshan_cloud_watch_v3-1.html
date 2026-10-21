@@ -96,4 +96,24 @@ async function load(){
  finally{$('refresh').disabled=false;$('apply').disabled=false}
 }
 const today=localDate();$('date').min=today;$('date').max=addDays(today,15);$('date').value=addDays(today,1);$('refresh').addEventListener('click',load);$('apply').addEventListener('click',load);$('today').addEventListener('click',()=>{$('date').value=localDate();load()});load();
-</script></body></html>
+</script>
+
+<style>
+  .fengge-watermark {
+    position: fixed;
+    right: 14px;
+    bottom: 12px;
+    z-index: 9999;
+    color: #64748b;
+    font-size: 12px;
+    letter-spacing: 2px;
+    opacity: 0.55;
+    pointer-events: none;
+    user-select: none;
+    text-shadow: 0 1px 2px rgba(255,255,255,0.5);
+  }
+</style>
+
+<div class="fengge-watermark">锋哥出品</div>
+
+</body></html>
