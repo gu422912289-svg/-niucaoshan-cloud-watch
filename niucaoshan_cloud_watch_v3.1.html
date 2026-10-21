@@ -209,7 +209,13 @@ const today=localDate();$('date').min=today;$('date').max=addDays(today,15);$('d
   }
   svg+='<text x="'+(W/2)+'" y="'+(H-3)+'" font-size="11" text-anchor="middle" fill="#617789">气温（℃）</text></svg>';
   const legend=results.map(d=>'<span style="display:inline-flex;align-items:center;gap:5px;margin-right:14px;font-size:12px"><i style="display:inline-block;width:18px;height:3px;background:'+colors[d.key]+'"></i>'+d.name+'</span>').join('');
-  p$('profileChart').innerHTML=legend+svg;
+   const diagnostic = '<details open style="margin-top:12px;padding:12px;background:#f3f6f7;border-radius:10px">'+
+    '<summary style="font-weight:700">原始数据诊断：温度范围 '+minT+'～'+maxT+'℃；有效气压层 '+all.length+' 个</summary>'+
+    '<div style="overflow-x:auto;margin-top:10px"><table style="width:100%;font-size:12px;text-align:left;border-collapse:collapse">'+
+    '<thead><tr><th>模式</th><th>气压hPa</th><th>温度℃</th><th>海拔m</th></tr></thead><tbody>'+
+    results.flatMap(d=>d.points.map(p=>'<tr><td>'+d.name+'</td><td>'+p.level+'</td><td>'+p.t.toFixed(1)+'</td><td>'+p.h.toFixed(0)+'</td></tr>')).join('')+
+    '</tbody></table></div></details>';
+   p$('profileChart').innerHTML=legend+svg+diagnostic;
  }
  async function loadProfile(){
   const btn=p$('profileRefresh');
