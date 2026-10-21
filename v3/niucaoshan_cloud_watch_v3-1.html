@@ -97,7 +97,6 @@ async function load(){
 }
 const today=localDate();$('date').min=today;$('date').max=addDays(today,15);$('date').value=addDays(today,1);$('refresh').addEventListener('click',load);$('apply').addEventListener('click',load);$('today').addEventListener('click',()=>{$('date').value=localDate();load()});load();
 </script>
-
 <style>
   .fengge-watermark {
     position: fixed;
@@ -113,7 +112,5 @@ const today=localDate();$('date').min=today;$('date').max=addDays(today,15);$('d
     text-shadow: 0 1px 2px rgba(255,255,255,0.5);
   }
 </style>
-
 <div class="fengge-watermark">锋哥出品</div>
-
 </body></html>
