@@ -321,4 +321,33 @@ async function run(){const btn=el('v32Run'),status=el('v32Status'),out=el('v32Re
  el('v32Run').addEventListener('click',run);
 })();
 </script>
+<!-- V3.3 dual audience module: paste immediately before </body> -->
+<section id="v33" class="card" style="max-width:850px;margin:14px auto;padding:16px">
+<h2>V3.3 云海机会 · 游客与专业双视图</h2>
+<p class="small">条件指数不是经过历史实况校准的发生概率；当前不提供虚假的百分比概率。</p>
+<div style="display:flex;gap:8px;margin:12px 0"><button type="button" id="v33simple">游客解读</button><button type="button" id="v33expert" class="secondary">专业数据</button></div>
+<button type="button" id="v33refresh">按当前日期重新分析</button><p id="v33status" class="small">等待查询</p>
+<div id="v33output"></div>
+</section>
+<script>
+(()=>{
+ const $=id=>document.getElementById(id), panel=$('v33output');let expert=false,cache=null;
+ const models=[{name:'ECMWF',url:'https://api.open-meteo.com/v1/ecmwf',levels:[1000,925,850,700,500]},{name:'GFS',url:'https://api.open-meteo.com/v1/gfs',levels:[1000,975,950,925,900,875,850,825,800,775,750,725,700,675,650,625,600,575,550,525,500]}];
+ const fmt=(n,d=0)=>Number.isFinite(n)?n.toFixed(d):'—';
+ function interpolate(points,h,key){const v=points.filter(p=>Number.isFinite(p[key])).sort((a,b)=>a.h-b.h);for(let i=1;i<v.length;i++){const a=v[i-1],b=v[i];if(h>=a.h&&h<=b.h&&b.h>a.h)return {value:a[key]+(b[key]-a[key])*(h-a.h)/(b.h-a.h),gap:b.h-a.h};}return null;}
+ async function read(m,lat,lon,date){const vars=m.levels.flatMap(l=>['temperature_'+l+'hPa','relative_humidity_'+l+'hPa','geopotential_height_'+l+'hPa']);const url=new URL(m.url);url.search=new URLSearchParams({latitude:lat,longitude:lon,hourly:vars.join(','),timezone:'Asia/Shanghai',start_date:date,end_date:date});const r=await fetch(url),j=await r.json();if(!r.ok||j.error)throw Error(j.reason||'接口错误');const ix=(j.hourly?.time||[]).findIndex(t=>t===date+'T05:00');if(ix<0)throw Error('05:00时次不可用');const pts=m.levels.map(l=>({p:l,t:j.hourly['temperature_'+l+'hPa']?.[ix],rh:j.hourly['relative_humidity_'+l+'hPa']?.[ix],h:j.hourly['geopotential_height_'+l+'hPa']?.[ix]})).filter(p=>Number.isFinite(p.t)&&Number.isFinite(p.h)&&p.t>-100&&p.t<65&&p.h>-500&&p.h<35000).sort((a,b)=>a.h-b.h);if(pts.length<2)throw Error('有效层不足');return {name:m.name,pts};}
+ function diagnose(m,h){const p=m.pts,inv=[];for(let i=1;i<p.length;i++){let a=p[i-1],b=p[i],dh=b.h-a.h,dt=b.t-a.t;if(dh>20&&dt>0.2)inv.push({low:a.h,high:b.h,rate:dt/dh*100});}const near=interpolate(p,h,'rh');const below=interpolate(p,h-300,'rh');const above=interpolate(p,h+300,'rh');const overlap=inv.some(v=>h>=v.low&&h<=v.high);const highNear=p.filter(x=>x.h>=h-700&&x.h<=h+300&&Number.isFinite(x.rh)&&x.rh>=90);return {...m,inv,near,below,above,overlap,highNear};}
+ function render(){if(!cache)return;const {results,errors,h,date}=cache;const reliable=results.filter(d=>d.near&&d.near.gap<=900);const rh=reliable.map(d=>d.near.value);const avg=rh.length?rh.reduce((a,b)=>a+b,0)/rh.length:null;const inv=results.filter(d=>d.overlap).length;const moisture=results.filter(d=>d.highNear.length).length;const conflicting=results.length===2&&results.every(d=>d.near)&&Math.abs(results[0].near.value-results[1].near.value)>=25;
+ // Diagnostic evidence score, not occurrence probability. Missing data is not assumed to be dry.
+ const enough=results.length===2&&reliable.length===2;const score=enough?Math.max(0,Math.min(100,Math.round(20+inv*10+moisture*12+Math.max(0,Math.min(36,(avg-50)*0.9))))):null;
+ const level=score===null?'资料不足':score>=75?'条件较有利':score>=50?'条件一般':'条件偏弱';
+ const explain=score===null?'目前不足以形成可靠的联合判断。':avg<60?'观景高度附近湿度偏低，即使存在逆温也未必形成云海。':moisture===0?'有一定湿度支持，但近观景高度的高湿层证据不足。':'逆温和局部高湿信号同时存在，但云层顶高与能否俯瞰仍不确定。';
+ const note=conflicting?'两套模式在观景高度附近湿度差异较大，应降低信心。':'需结合低云量、近地能见度、风速和实况复核。';
+ if(!expert){panel.innerHTML='<div class="metric" style="padding:16px"><div class="small">'+date+' · 观景高度 '+h+'m</div><h2 style="margin:8px 0">云海机会：'+level+'</h2><div style="font-size:32px;font-weight:750">'+(score===null?'—':score+' / 100')+'</div><div class="small">探索性条件指数，不是云海发生概率</div><p>'+explain+'</p><p class="small">'+note+'</p><p class="small">数据可用 '+results.length+'/2 模式；近高度可靠插值 '+reliable.length+'/2。未包含现场云海实况校准。</p></div>';}else{
+ panel.innerHTML='<div class="metric"><b>专业诊断 · '+date+' 05:00（北京时间）</b><p class="small">观景高度 '+h+'m；条件指数 '+(score??'无法计算')+'；插值最大允许层距 900m；逆温定义：相邻层温升超过0.2℃且层距大于20m。</p>'+results.map(d=>'<h3>'+d.name+'</h3><p class="small">逆温层段：'+d.inv.map(v=>fmt(v.low)+'–'+fmt(v.high)+'m ('+fmt(v.rate,2)+'℃/100m)').join('；')+'；观景点位于逆温层段内：'+(d.overlap?'是':'否')+'</p><p class="small">观景点湿度插值 '+fmt(d.near?.value,1)+'%（层距 '+fmt(d.near?.gap)+'m）；下方300m '+fmt(d.below?.value,1)+'%；上方300m '+fmt(d.above?.value,1)+'%；附近高湿采样层 '+d.highNear.length+'</p><details><summary>气压层原始数据（'+d.pts.length+'）</summary><div style="overflow-x:auto"><table style="width:100%;font-size:12px"><thead><tr><th>hPa</th><th>高度m</th><th>温度℃</th><th>RH%</th></tr></thead><tbody>'+d.pts.map(p=>'<tr><td>'+p.p+'</td><td>'+fmt(p.h)+'</td><td>'+fmt(p.t,1)+'</td><td>'+fmt(p.rh)+'</td></tr>').join('')+'</tbody></table></div></details>').join('')+'<p class="small">'+errors.join('；')+'</p><p class="small">插值仅是气压层之间的线性估算；山区网格与真实地形存在偏差。高湿层不等于云层，不能据此确定云顶高度。</p></div>';}
+ }
+ async function run(){const btn=$('v33refresh');btn.disabled=true;$('v33status').textContent='正在读取气象剖面…';try{const h=Number($('elev').value),lat=Number($('lat').value),lon=Number($('lon').value),date=$('date').value;if(!date||![h,lat,lon].every(Number.isFinite))throw Error('参数无效');const rs=await Promise.allSettled(models.map(m=>read(m,lat,lon,date)));const results=[],errors=[];rs.forEach((r,i)=>r.status==='fulfilled'?results.push(diagnose(r.value,h)):errors.push(models[i].name+'：'+(r.reason?.message||'失败')));cache={results,errors,h,date};$('v33status').textContent=results.length+'/2 套模式可用';render();}catch(e){$('v33status').textContent='分析失败：'+e.message;}finally{btn.disabled=false;}}
+ $('v33simple').onclick=()=>{expert=false;render();};$('v33expert').onclick=()=>{expert=true;render();};$('v33refresh').onclick=run;
+})();
+</script>
 </body></html>
