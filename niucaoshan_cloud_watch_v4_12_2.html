@@ -1,0 +1,447 @@
+<!doctype html><html lang="zh-CN"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><meta name="theme-color" content="#102a43"><meta name="description" content="云海可观赏条件、日出降雨、能见度和逐层云量分析。实验性气象预测工具，支持不同观景点。"><title>牛草山云海预测器 V4.12.2 · 锋哥出品</title><style>
+:root{--navy:#102a43;--blue:#286b83;--bg:#f3f6f7;--ink:#193548;--muted:#647989;--line:#dce5e9}*{box-sizing:border-box}body{margin:0;background:var(--bg);color:var(--ink);font:15px/1.55 system-ui,-apple-system,"PingFang SC",sans-serif}.wrap{max-width:850px;margin:auto;padding:12px 12px 55px}.hero{background:linear-gradient(125deg,#102a43,#286b83);color:#fff;border-radius:22px;padding:24px 19px}.hero h1{margin:4px 0;font-size:26px}.hero p{margin:4px 0;opacity:.88}.card{background:#fff;border:1px solid var(--line);border-radius:19px;margin-top:12px;padding:16px;box-shadow:0 4px 15px #102a4308}h2{font-size:19px;margin:0 0 10px}h3{font-size:15px;margin:12px 0 5px}.muted,.small{color:var(--muted)}.small{font-size:12px}.grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:9px}.metric{background:#f2f6f7;border-radius:12px;padding:12px;min-width:0}.metric b{display:block;font-size:20px}.metric span{font-size:12px;color:var(--muted)}input{width:100%;padding:11px;border:1px solid #d3e0e5;border-radius:10px;font:inherit;color:var(--ink);background:#fff}label{font-size:12px;color:var(--muted);display:block;margin:0 0 4px}button{font:inherit;border:0;background:var(--navy);color:#fff;padding:12px 15px;border-radius:11px;font-weight:700;cursor:pointer}button.secondary{background:#e6eef1;color:var(--navy)}button.active{background:var(--navy);color:#fff}button:disabled{opacity:.6}.row{display:flex;align-items:center;gap:9px;flex-wrap:wrap}.tabs button{flex:1}.hidden{display:none!important}.notice{padding:12px;background:#fff8e9;border:1px solid #ead9ad;border-radius:12px;margin-top:12px;font-size:13px}.big{font-size:34px;font-weight:800;line-height:1.2}.tag{font-size:12px;color:#24634c}.bar{height:10px;background:#e8eef0;border-radius:12px;overflow:hidden;margin:12px 0}.bar i{display:block;height:100%;background:#286b83;width:0}table{width:100%;border-collapse:collapse;font-size:12px;white-space:nowrap}td,th{border-bottom:1px solid #e6edef;padding:6px;text-align:left}th{background:#f1f5f7}details{margin-top:9px}summary{cursor:pointer;font-weight:650}svg{display:block;width:100%;height:auto}#chart{overflow-x:auto}.footer{text-align:center;color:#8595a1;font-size:12px;padding:16px}.watermark{position:fixed;right:14px;bottom:12px;opacity:.55;font-size:12px;pointer-events:none;z-index:20}@media(max-width:360px){.hero h1{font-size:22px}.grid{gap:6px}.metric{padding:9px}}
+
+/* V4.12.2: mobile-first presentation; calculation and weather requests unchanged */
+.quick-summary{margin-top:14px;padding:19px 16px;border:1px solid #cddfe7;border-radius:18px;background:linear-gradient(160deg,#edf7fa 0%,#ffffff 80%)}
+.quick-eyebrow{font-size:11px;letter-spacing:.12em;font-weight:750;color:#39778a}
+.quick-place{font-size:13px;color:#526e7c;margin:5px 0 14px}
+.quick-main{display:flex;align-items:center;justify-content:space-between;gap:12px}
+.quick-title{font-weight:850;font-size:clamp(24px,7vw,31px);line-height:1.3;color:#123c52}
+.quick-sub{font-size:13px;color:#537483;margin-top:5px}
+.quick-symbol{font-size:34px;background:#dbecef;border-radius:15px;padding:10px 12px;flex-shrink:0}
+.quick-reason{font-size:14px;margin:12px 0;line-height:1.7;color:#344f5d}
+.quick-grid{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:7px}
+.quick-grid>div{border-radius:11px;background:#edf3f5;padding:10px 7px;min-width:0}
+.quick-grid span{display:block;color:#657d8b;font-size:11px}
+.quick-grid strong{display:block;font-size:12px;line-height:1.4;overflow-wrap:anywhere;margin-top:4px}
+.quick-updated{border-top:1px solid #d7e3e8;padding-top:11px;margin-top:12px;color:#5e7885;font-size:11px;line-height:1.6}
+.simple-details{margin-top:12px;border:1px solid #dae5e9;border-radius:14px;background:#fff;overflow:hidden}
+.simple-details>summary{list-style:none;display:flex;justify-content:space-between;align-items:center;gap:8px;padding:14px 12px;cursor:pointer;color:#153c50;font-size:14px;font-weight:750}
+.simple-details>summary::-webkit-details-marker{display:none}
+.simple-details>summary span{font-size:12px;font-weight:500;color:#718998;white-space:nowrap}
+.simple-details[open]>summary{border-bottom:1px solid #dae5e9}
+.detail-content{padding:0 10px 12px}
+.data-scroll{max-width:100%;overflow-x:auto;overscroll-behavior-x:contain;-webkit-overflow-scrolling:touch}
+.data-scroll table{min-width:440px}
+#expertPanel h3{margin-top:20px}
+#expertPanel .metric{overflow-x:auto}
+.card{overflow-wrap:break-word}
+@media(max-width:380px){.quick-grid strong{font-size:11px}.quick-summary{padding:14px 11px}}
+
+/* V4.12.2.1: 2-column rainfall tables always fit narrow phones */
+#rainExpert{overflow-x:visible}
+#rainExpert>div{max-width:100%}
+#rainExpert>div>div{overflow-x:visible!important}
+#rainExpert table{width:100%;min-width:0!important;table-layout:fixed;white-space:normal}
+#rainExpert th:first-child,#rainExpert td:first-child{width:65%;overflow-wrap:anywhere}
+#rainExpert th:last-child,#rainExpert td:last-child{width:35%;text-align:right;white-space:nowrap}
+#rainExpert th,#rainExpert td{padding:9px 5px;font-variant-numeric:tabular-nums}
+
+/* V4.12.2 map picker */
+.map-launch{display:flex;gap:8px;flex-wrap:wrap;margin:8px 0}
+.map-launch button{margin:0}
+#mapPanel{margin-top:12px;padding:12px;border:1px solid #d5e3e8;border-radius:13px;background:#f8fbfc}
+#mapPanel[hidden]{display:none!important}
+#mapPicker{height:310px;max-height:48vh;min-height:230px;border-radius:12px;border:1px solid #c7d9df;z-index:0}
+.map-search{display:flex;gap:7px;align-items:stretch;margin-bottom:10px}
+.map-search input{min-width:0;flex:1}
+.map-search button{margin:0;white-space:nowrap}
+.map-output{background:#eaf3f6;border-radius:10px;padding:11px;margin-top:10px;line-height:1.65}
+#mapResults{display:grid;gap:6px;margin:8px 0}
+#mapResults button{background:#e8f0f4;color:#16364a;text-align:left;margin:0;line-height:1.35;font-size:13px}
+#mapApply{margin-top:8px;width:100%}
+@media(max-width:460px){#mapPicker{height:265px}.map-search button{font-size:13px;padding:8px}.map-output{font-size:13px}}
+
+/* V4.12.2: loading message remains visible on slow networks */
+#status{overflow-wrap:anywhere;line-height:1.5}
+</style><link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" crossorigin=""><script defer src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js" crossorigin=""></script></head><body><main class="wrap"><header class="hero"><div class="small" style="color:#c7e4ee">CLOUD SEA WATCH · V4.12.2</div><h1>牛草山云海预测器</h1><p>看懂云海机会 · 追溯专业气象依据</p><p class="small" style="color:#dcecf2">支持修改坐标与观景高度，预测未来15天内的日出时段</p></header>
+<section class="card"><h2>地图选择观景点 <span class="small">· V4.12.2 测试功能</span></h2>
+<p class="small">可在地图点击真正站立观景的位置，自动获取 WGS-84 坐标并查询地形高程。<strong>DEM高程不是观景台实测海拔</strong>；请确认后应用。原手动输入仍可用。</p>
+<div class="map-launch"><button type="button" id="mapToggle">打开地图选点</button><button type="button" id="mapPreset" class="secondary">选择已确认的牛草山观景点</button></div>
+<div id="mapPanel" hidden>
+<div class="map-search"><input id="mapQuery" placeholder="山峰 / 地名（点搜索后查询）" aria-label="搜索山峰或地名"><button type="button" id="mapSearchBtn">搜索地点</button></div>
+<div class="map-search"><input id="mapCoord" placeholder="或粘贴坐标：31.044687, 116.265979" aria-label="经纬度直达"><button type="button" id="mapCoordBtn">定位坐标</button></div>
+<div id="mapResults"></div>
+<div id="mapPicker" aria-label="地图点选观景台"></div>
+<div id="mapMessage" class="small" role="status">点选地图位置后查询地形高程。首次加载地图需要联网。</div>
+<div class="map-output">
+<div>纬度 <strong id="mapLat">—</strong> · 经度 <strong id="mapLon">—</strong></div>
+<div>自动DEM海拔：<strong id="mapDem">未查询</strong> · <span id="mapSource">数据源：—</span></div>
+<label for="mapHeight">用于预测的观景海拔（米）· 可修正</label>
+<input id="mapHeight" type="number" step="1" min="-500" max="9000" placeholder="等待DEM查询或自行填写">
+<div id="mapElevationNote" class="small">如有实测海拔，优先填实测值；DEM只代表附近网格地形。</div>
+<button type="button" id="mapApply" disabled>确认位置与海拔，填入预测条件</button>
+</div></div>
+<p class="small">地图 © OpenStreetMap contributors；高程 © Open-Meteo（Copernicus GLO-90）/ OpenTopoData（SRTM30m）。搜索尝试 Photon 与 Nominatim 两个公开服务，频率受限；地图失效时可继续手动输入。</p>
+</section>
+<section class="card"><h2>位置与日期</h2><div class="grid"><div><label>纬度 N</label><input id="lat" type="number" step="0.000001" value="31.044687"></div><div><label>经度 E</label><input id="lon" type="number" step="0.000001" value="116.265979"></div><div><label>观景海拔（米）</label><input id="elev" type="number" step="1" value="1350"></div><div><label>目标日期</label><input id="date" type="date"></div></div><div class="row" style="margin-top:12px"><button id="run">重新预测</button><span id="status" class="small" role="status" aria-live="polite">等待分析</span></div><div class="small" style="margin-top:8px">默认牛草山：31.044687°N，116.265979°E，1350m。不同山峰请修改坐标和观景海拔。</div></section>
+<section class="card"><div class="row tabs"><button id="simple" class="active" type="button">游客解读</button><button id="expert" class="secondary" type="button">专业分析</button></div><div id="simplePanel"><div id="quickSummary" class="quick-summary" aria-live="polite">
+<div class="quick-eyebrow">日出云海 · 出行参考</div>
+<div id="quickLocation" class="quick-place">牛草山 · 等待预测</div>
+<div class="quick-main"><div><div id="quickTitle" class="quick-title">正在准备预报</div><div id="quickScore" class="quick-sub">可观赏条件指数：—</div></div><span id="quickSymbol" class="quick-symbol" aria-hidden="true">☁</span></div>
+<p id="quickReason" class="quick-reason">综合云层位置、能见度与降雨情况，提供出行参考。</p>
+<div class="quick-grid"><div><span>日出</span><strong id="quickSunrise">—</strong></div><div><span>降雨</span><strong id="quickRain">—</strong></div><div><span>能见度</span><strong id="quickVisibility">—</strong></div></div>
+<div id="quickUpdated" class="quick-updated">数据尚未更新</div></div>
+<details id="simpleDetails" class="simple-details"><summary>查看完整气象依据与分析图表 <span>展开 ↓</span></summary><div class="detail-content"><div style="margin-top:15px"><div class="small">日出前后可观赏云海条件</div><div id="verdict" class="big">等待数据</div><div id="scoreText" class="muted">可观赏条件指数 — / 100（非真实发生概率）</div><div class="bar"><i id="bar"></i></div><div id="formationCompare" class="small" style="margin:8px 0">原始云雾形成指数：等待数据</div><p id="plain">点击重新预测获取最新气象信息。</p></div><div class="grid"><div class="metric"><span>逆温条件</span><b id="invSimple">—</b></div><div class="metric"><span>观景高度湿度（模式范围）</span><b id="rhSimple">—</b></div><div class="metric"><span>低云信号</span><b id="lowSimple">—</b></div><div class="metric"><span>模式一致性</span><b id="agreeSimple">—</b></div></div><div class="metric" style="margin-top:12px"><span>云层与观景高度关系</span><div id="cloudEvidence" class="metric" style="margin:12px 0"><span>逐层云量证据</span><b id="cloudEvidenceTitle">等待查询</b><div class="small" id="cloudEvidenceText"></div></div><div id="cloudPosition" style="font-size:19px;font-weight:750;margin:5px 0">待分析</div><div id="cloudDiagram" aria-label="观景点与云层关系示意图"></div><div id="cloudCaution" class="small">云底与云顶暂无可信估计，不以逆温层顶替代云顶。</div></div><div class="metric" style="margin-top:12px"><span>日出与重点观测窗口</span><b id="sunriseText">—</b><div id="windowText" class="small">等待预报</div></div>
+<div class="metric" style="margin-top:10px"><span>关键气象信号 · 日出前后</span><div id="signalText" class="small">等待预报</div></div>
+<div class="metric" style="margin-top:10px"><span>日出降雨风险 · 独立预报</span><b id="rainStatus">等待数据</b><div id="rainDetail" class="small">ECMWF、GFS分别查询逐小时降水；模式分歧不等同于无数据。</div><div id="viewIndex" class="small"></div></div>
+<div class="metric" style="margin-top:10px"><span>能见度与低云遮挡风险 · 独立提示</span><b id="visibilityStatus">等待数据</b><div id="visibilityDetail" class="small">能见度为预报网格值，不代表观景台实测。</div><div id="visibilityValues" class="small"></div></div>
+<div class="metric" style="margin-top:10px"><span>洗头风险 / 云海可观赏性 · 新算法</span><b id="washRisk">等待分析</b><div id="washReason" class="small"></div><div id="watchBreakdown" class="small" style="margin-top:7px"></div></div>
+<div class="metric" style="margin-top:10px"><span>出发决策建议</span><b id="tripAdvice">—</b><div id="adviceReason" class="small"></div></div>
+<div class="notice">这里显示的是<strong>探索性可观赏条件指数</strong>，优先考虑是否能在山顶看到云海，而非仅判断云雾是否形成。两种指数都未经实况校准，不是经过实况校准的发生概率。核心指标不足时显示“资料不足”；一般模式分歧不再阻止预测。</div></div></details></div>
+<div id="expertPanel" class="hidden"><p class="small">温度—高度剖面、逆温层、观景高度湿度插值、模式原始数据及缺失情况。气压层位势高度不等于真实山谷地形。</p><div id="chart">尚未分析</div><h3>降雨逐小时对照（03:00—09:00，独立数据源）</h3><div id="rainExpert" class="metric small data-scroll">等待数据</div><h3>可观赏条件指数：逐项扣分明细</h3><div id="watchExpert" class="metric small">等待数据</div><h3>原始云雾形成指数：评分因素与依据</h3><div id="scoreBreakdown" class="metric small">等待查询</div><h3>湿度—高度剖面</h3><div id="cloudProfile" class="metric" style="margin:12px 0"><span>气压层云量明细</span><div id="cloudProfileBody" class="small data-scroll">等待查询</div></div><h3>云量—高度垂直剖面（05:00）</h3><div id="cloudVerticalChart">等待查询</div><h3>日出时段逐小时云量（04:00—08:00）</h3><div id="cloudHourlyChart" class="data-scroll">等待查询</div><div id="rhChart">尚未分析</div><div id="expertDetails" class="data-scroll"></div></div></section>
+<section class="card"><h2>数据与判断边界</h2><p class="small">数据来源：Open-Meteo GFS/ECMWF 专用接口逐层云量、逐小时降水；Open-Meteo Forecast（低云、风、近地面湿度及辅助降水概率）及 ECMWF/GFS 压力层温度、相对湿度、位势高度。原始云雾形成评分：低层水汽、逆温、低云、风速四类因素，按有数据的权重归一；缺失项不记0分。阈值和权重尚未通过实况校准。采用目标日北京时间05:00压力层资料，并对04:00—08:00逐小时云量进行比较，低云和风速等使用04:00—08:00平均值；降雨核查展示03:00—09:00，并仅以日出窗口数据触发降雨限制；V4.12.2将观景高度附近逐层云量、网格能见度和独立降雨风险纳入可观赏性评分，强调“洗头”风险；两种评分均未实况校准。不同模式分辨率和山区地形误差会影响判断。</p><p class="small">高湿采样层不等于实测云层，逆温不等于云海。气压层稀疏时不对观景点湿度进行强行插值。云层高度图仅作位置关系示意，未推断真实云底、云顶。此工具不提供交通安全保证。</p></section><div class="footer">V4.12.2 · 公开测试界面优化版 · 锋哥出品</div></main><div class="watermark">锋哥出品</div>
+<script>
+(()=>{'use strict';const $=id=>document.getElementById(id), tz='Asia/Shanghai';let current=null,expert=false;let cloudEvidence=[];const models=[{key:'ecmwf',name:'ECMWF',url:'https://api.open-meteo.com/v1/ecmwf',levels:[1000,925,850,700,500]},{key:'gfs',name:'GFS',url:'https://api.open-meteo.com/v1/gfs',levels:[1000,975,950,925,900,875,850,825,800,775,750,725,700,675,650,625,600,575,550,525,500]}];
+const now=()=>new Intl.DateTimeFormat('en-CA',{timeZone:tz,year:'numeric',month:'2-digit',day:'2-digit'}).format(new Date());const plus=(s,n)=>{const d=new Date(s+'T12:00:00Z');d.setUTCDate(d.getUTCDate()+n);return d.toISOString().slice(0,10)};const today=now();$('date').min=today;$('date').max=plus(today,15);$('date').value=plus(today,1);
+function finite(v){return typeof v==='number'&&Number.isFinite(v)}function avg(a){const b=a.filter(finite);return b.length?b.reduce((x,y)=>x+y,0)/b.length:null}function fmt(v,n=0){return finite(v)?v.toFixed(n):'—'}function esc(v){return String(v).replace(/[&<>"']/g,ch=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[ch]))}function qurl(base,params){const u=new URL(base);u.search=new URLSearchParams(params).toString();return u}async function jsonFetch(url){
+ // 每项气象请求最长12秒，避免某个气象源挂起导致整页无限等待。
+ const controller=new AbortController();
+ const timer=setTimeout(()=>controller.abort(),12000);
+ try{
+  const r=await fetch(url,{signal:controller.signal});
+  if(!r.ok){let detail='';try{const e=await r.json();detail=e.reason||''}catch(_){}throw Error(detail||'HTTP '+r.status)}
+  const j=await r.json();if(j.error)throw Error(j.reason||'接口返回错误');return j;
+ }catch(e){if(e.name==='AbortError')throw Error('请求超时（12秒）');throw e}
+ finally{clearTimeout(timer)}
+}
+async function profile(m,lat,lon,date){const vars=m.levels.flatMap(l=>['temperature_'+l+'hPa','relative_humidity_'+l+'hPa','geopotential_height_'+l+'hPa']);const j=await jsonFetch(qurl(m.url,{latitude:lat,longitude:lon,hourly:vars.join(','),timezone:tz,start_date:date,end_date:date}));const times=j.hourly?.time||[];const ix=times.findIndex(t=>t===date+'T05:00');if(ix<0)throw Error('缺少05:00时次');const pts=m.levels.map(p=>({p,t:j.hourly['temperature_'+p+'hPa']?.[ix],h:j.hourly['geopotential_height_'+p+'hPa']?.[ix],rh:j.hourly['relative_humidity_'+p+'hPa']?.[ix]})).filter(x=>finite(x.t)&&finite(x.h)&&x.t>=-100&&x.t<=65&&x.h>=-500&&x.h<=35000).sort((a,b)=>a.h-b.h);if(pts.length<2)throw Error('有效温度/高度层不足');return {...m,pts,time:times[ix]}}
+async function surface(lat,lon,date){const vars='relative_humidity_2m,cloud_cover_low,cloud_cover,precipitation,precipitation_probability,wind_speed_10m';const j=await jsonFetch(qurl('https://api.open-meteo.com/v1/forecast',{latitude:lat,longitude:lon,hourly:vars,daily:'sunrise',timezone:tz,start_date:date,end_date:date}));const ix=(j.hourly?.time||[]).map((t,i)=>({t,i})).filter(x=>x.t.startsWith(date)&&Number(x.t.slice(11,13))>=4&&Number(x.t.slice(11,13))<=8).map(x=>x.i);if(!ix.length)throw Error('缺少04:00—08:00预报');const val=k=>avg(ix.map(i=>j.hourly[k]?.[i]));return {rh:val('relative_humidity_2m'),low:val('cloud_cover_low'),total:val('cloud_cover'),rain:val('precipitation'),rainp:val('precipitation_probability'),wind:val('wind_speed_10m'),sunrise:j.daily?.sunrise?.[0]||null,hourly:ix.map(i=>({time:j.hourly.time[i],low:j.hourly.cloud_cover_low?.[i],rh:j.hourly.relative_humidity_2m?.[i],wind:j.hourly.wind_speed_10m?.[i],rain:j.hourly.precipitation?.[i]}))}}
+// 能见度独立使用综合预报接口，不以湿度或云量推算。失败时标记无数据。
+async function visibilityRequest(lat,lon,date){
+ const url=qurl('https://api.open-meteo.com/v1/forecast',{latitude:lat,longitude:lon,hourly:'visibility',timezone:tz,start_date:date,end_date:date});
+ const j=await jsonFetch(url),times=j.hourly?.time||[],v=j.hourly?.visibility;
+ if(!Array.isArray(v)||!times.length)throw Error('预报接口未返回能见度');
+ return {source:'Open-Meteo Forecast',rows:times.map((t,i)=>({time:t,m:finite(v[i])?v[i]:null}))};
+}
+function visibilitySummary(data,sunrise,low){
+ const raw=data?.rows||[], day=(sunrise||'').slice(0,10), sun=(sunrise&&sunrise.includes('T'))?new Date(sunrise+':00+08:00').getTime():null;
+ const arr=raw.filter(r=>{if(!r.time.startsWith(day))return false; const t=new Date(r.time+':00+08:00').getTime();return finite(sun)?t>=sun-90*60000&&t<=sun+90*60000:Number(r.time.slice(11,13))>=5&&Number(r.time.slice(11,13))<=8});
+ const vals=arr.map(r=>r.m).filter(finite),min=vals.length?Math.min(...vals):null;
+ let status='能见度无数据',detail='接口未返回有效能见度，不根据湿度估算具体公里数。';
+ if(finite(min)){
+   status=min<1000?'低能见度风险高':min<3000?'能见度偏低':min<5000?'能见度一般':'网格能见度较好';
+   detail='日出前后网格预报最低能见度 '+(min/1000).toFixed(1)+' km；不是观景台能见度。';
+ }
+ if(finite(low)&&low>=80)detail+=' 同时低云总量偏高；云可能在山下也可能遮挡山顶，位置仍无法可靠确定。';
+ return {status,detail,min,rows:arr,lowCloudRisk:finite(low)&&low>=80};
+}
+// 降水值对应此前一小时累计量，例如07:00为06:00—07:00；两套模式分别查询。
+async function rainRequest(m,lat,lon,date){
+ const url=qurl(m.url,{latitude:lat,longitude:lon,models:m.key==='gfs'?'gfs_global':'ecmwf_ifs025',hourly:'precipitation',timezone:tz,start_date:date,end_date:date});
+ const j=await jsonFetch(url);const times=j.hourly?.time||[],vals=j.hourly?.precipitation;
+ if(!times.length||!Array.isArray(vals))throw Error('未返回降水数组');
+ return {name:m.name,url,rows:times.map((t,i)=>({time:t,mm:finite(vals[i])?vals[i]:null}))};
+}
+function rainfallSummary(all,sunrise,score){
+ const viewMin=sunrise&&/^\d{4}-\d\d-\d\dT\d\d:\d\d/.test(sunrise)?new Date(sunrise+':00+08:00').getTime():null;
+ const start=finite(viewMin)?viewMin-30*60000:null,end=finite(viewMin)?viewMin+60*60000:null;
+ const summaries=all.map(m=>{
+   const inWindow=(m.rows||[]).filter(r=>{
+    if(start===null)return Number(r.time.slice(11,13))>=6&&Number(r.time.slice(11,13))<=8;
+    const t=new Date(r.time+':00+08:00').getTime();return t>start&&t-3600000<end;
+   });
+   const nums=inWindow.map(r=>r.mm).filter(finite),max=nums.length?Math.max(...nums):null;
+   return {...m,items:(m.rows||[]).filter(r=>Number(r.time.slice(11,13))>=3&&Number(r.time.slice(11,13))<=9),windowItems:inWindow,valid:nums.length,max,wet:finite(max)?max>=0.2:null,heavy:finite(max)?max>=0.5:null};
+ });
+ const available=summaries.filter(m=>finite(m.max));let status='降雨数据不足',cap=null,detail='独立降水数据不足；保留原始形成指数，不把缺失当作无雨。';
+ if(available.length===2){
+   const wet=available.filter(m=>m.wet).length,heavy=available.filter(m=>m.heavy).length;
+   if(heavy===2){status='两套模式均预报观景时段有较明显降水';cap=30;detail='日出窗口两套模式最大逐小时降水均≥0.5mm，观赏不利。';}
+   else if(wet===2){status='两套模式均有降水信号';cap=45;detail='日出窗口两套模式最大逐小时降水均≥0.2mm；可能影响能见度。';}
+   else if(wet===1){status='降雨预报存在分歧';cap=65;detail='只有一套模式预报≥0.2mm；出发前需复核雷达及实况。';}
+   else {status='两套模式降雨信号弱';detail='日出窗口两套模式逐小时降水均<0.2mm；仍不能保证山顶无雨雾。';}
+ }else if(available.length===1){
+   status=available[0].wet?'仅一套模式显示降雨':'仅一套模式降雨信号弱';detail='另一套模式无数据，无法确认一致性；'+available[0].name+'最大逐小时降水'+fmt(available[0].max,1)+'mm。';
+ }
+ const view=finite(score)?(finite(cap)?Math.min(score,cap):score):null;
+ return {status,detail,view,cap,summaries,limited:available.length!==2};
+}
+function interp(pts,h){for(let i=0;i<pts.length-1;i++){const a=pts[i],b=pts[i+1],gap=b.h-a.h;if(a.h<=h&&h<=b.h&&gap>0&&gap<=900&&finite(a.rh)&&finite(b.rh))return {value:a.rh+(b.rh-a.rh)*(h-a.h)/gap,gap};}return null}
+function diagnose(m,h){const inv=[];for(let i=0;i<m.pts.length-1;i++){const a=m.pts[i],b=m.pts[i+1],dh=b.h-a.h,dt=b.t-a.t;if(dh>20&&dt>0.2)inv.push({low:a.h,high:b.h,rate:dt/dh*100,dt})}return {...m,inv,inside:inv.some(v=>v.low<=h&&h<=v.high),at:interp(m.pts,h),below:interp(m.pts,h-300),above:interp(m.pts,h+300)}}
+function evaluate(data){
+ const {profiles,surf,h}=data;
+ const nearValues=profiles.map(p=>p.at?.value).filter(finite);
+ const belowValues=profiles.map(p=>p.below?.value).filter(finite);
+ const aboveValues=profiles.map(p=>p.above?.value).filter(finite);
+ const near=avg(nearValues),below=avg(belowValues),above=avg(aboveValues);
+ const invCount=profiles.filter(p=>p.inside).length;
+ const clamp=x=>Math.max(0,Math.min(100,x));
+ // 四个独立因素，按可用因素的权重归一；没有数据不当成0，也不设单项否决。
+ const parts=[];
+ function add(name,weight,value,reason){if(finite(value))parts.push({name,weight,value:clamp(value),reason});}
+ // 水汽：下方湿度为主，观景高度湿度仅作垂直结构参考；避免平均值掩盖模式分歧。
+ if(belowValues.length){
+   const lower=belowValues.length===1?belowValues[0]:Math.max(...belowValues);
+   const nearDry=nearValues.length?Math.min(...nearValues):null;
+   let humidity=clamp((lower-45)*1.8);
+   if(finite(nearDry)&&lower-nearDry>=20)humidity=clamp(humidity+8);
+   add('低层水汽',35,humidity,'观景点下方300米湿度最高'+fmt(lower)+'%；下湿上干只加少量参考分');
+ }else if(finite(surf?.rh)){
+   // 地面湿度不是山顶湿度，降低其在总分里的权重。
+   add('低层水汽（近地面替代）',15,clamp((surf.rh-45)*1.8),'仅有网格近地面湿度'+fmt(surf.rh)+'%，不等同山谷实况');
+ }
+ if(profiles.length){
+   add('逆温稳定度',25,invCount===2?85:invCount===1?65:30,
+      '覆盖观景高度的逆温：'+invCount+'/'+profiles.length+'套模式');
+ }
+ // 优先有山顶上下逐层云量；缺少时再参考网格低云总量。
+ const g=cloudEvidence.find(x=>x.name==='GFS'&&Array.isArray(x.rows))
+      ||cloudEvidence.find(x=>Array.isArray(x.rows));
+ if(g){
+   const n=g.rows.filter(r=>finite(r.h)&&finite(r.cloud)&&Math.abs(r.h-h)<=450);
+   const b=g.rows.filter(r=>finite(r.h)&&finite(r.cloud)&&r.h<h-150&&r.h>=h-1200);
+   if(n.length||b.length){
+     const nc=n.length?Math.max(...n.map(r=>r.cloud)):null;
+     const bc=b.length?Math.max(...b.map(r=>r.cloud)):null;
+     let cloud=finite(bc)?clamp(bc*1.15):finite(nc)?clamp(nc*.6):null;
+     if(finite(bc)&&finite(nc)&&bc>nc+20)cloud=clamp(cloud+10);
+     add('逐层低云',25,cloud,g.name+'下方最大云量'+fmt(bc)+'%，附近最大云量'+fmt(nc)+'%');
+   }
+ }
+ if(!parts.some(p=>p.name==='逐层低云')&&finite(surf?.low))
+   add('低云总量',25,clamp(surf.low*1.1),'网格低云总量'+fmt(surf.low)+'%');
+ if(finite(surf?.wind)){
+   const wind=surf.wind<=10?85:surf.wind<=20?65:surf.wind<=30?35:10;
+   add('风速条件',15,wind,'网格风速'+fmt(surf.wind)+'km/h；降雨独立判断，不在此重复扣分');
+ }
+ // 至少两个不同因素才计算；个别字段缺失不停止运行。
+ const total=parts.reduce((x,p)=>x+p.weight,0);
+ const enough=parts.length>=2 && total>=40;
+ const score=enough?Math.round(parts.reduce((x,p)=>x+p.weight*p.value,0)/total):null;
+ const level=score===null?'基础资料不足':score>=75?'条件较有利':score>=55?'有一定机会':score>=35?'机会偏弱':'条件不利';
+ return {score,level,near,below,above,invCount,enough,parts,
+   nearValues,belowValues,coverage:total};
+}
+function chart(profiles,h){if(!profiles.length)return '<p class="small">没有可绘制的气压层数据。</p>';const pts=profiles.flatMap(d=>d.pts),temps=pts.map(p=>p.t),heights=pts.map(p=>p.h).concat(h);const minT=Math.floor(Math.min(...temps)-1),maxT=Math.ceil(Math.max(...temps)+1),minH=Math.min(...heights),maxH=Math.max(...heights),W=640,H=350,L=57,R=20,T=23,B=45;const x=t=>L+(t-minT)/(maxT-minT)*(W-L-R),y=v=>T+(maxH-v)/(maxH-minH)*(H-T-B);let s='<svg viewBox="0 0 640 350" role="img" aria-label="气温高度垂直剖面">';for(let i=0;i<=4;i++){const temp=minT+(maxT-minT)*i/4,xx=x(temp),alt=minH+(maxH-minH)*i/4,yy=y(alt);s+=`<line x1="${xx}" y1="${T}" x2="${xx}" y2="${H-B}" stroke="#dbe5e9"/><text x="${xx}" y="${H-20}" font-size="11" text-anchor="middle" fill="#617789">${fmt(temp)}°</text><line x1="${L}" y1="${yy}" x2="${W-R}" y2="${yy}" stroke="#e6edef"/><text x="${L-6}" y="${yy+4}" font-size="10" text-anchor="end" fill="#617789">${fmt(alt)}</text>`}s+=`<line x1="${L}" y1="${y(h)}" x2="${W-R}" y2="${y(h)}" stroke="#ad4949" stroke-dasharray="5 4"/><text x="${W-R-2}" y="${y(h)-5}" text-anchor="end" font-size="11" fill="#ad4949">观景 ${h}m</text>`;for(const d of profiles){const color=d.key==='ecmwf'?'#286b83':'#b07a1b';s+=`<polyline points="${d.pts.map(p=>x(p.t)+','+y(p.h)).join(' ')}" fill="none" stroke="${color}" stroke-width="2.5"/>`;for(const p of d.pts)s+=`<circle cx="${x(p.t)}" cy="${y(p.h)}" r="2.5" fill="${color}"/>`}return '<div class="small">🔵 ECMWF　🟠 GFS　｜横轴气温℃ · 纵轴海拔m</div>'+s+'</svg>'}
+function cloudDiagram(h){const W=620,H=205,top=4000,bottom=0;const y=z=>24+(top-z)/(top-bottom)*155;const yy=Math.max(26,Math.min(179,y(h)));let a=`<svg viewBox="0 0 ${W} ${H}" role="img" aria-label="观景高度 ${fmt(h)} 米，云底云顶暂无法确定"><rect x="0" y="0" width="620" height="205" rx="12" fill="#eaf2f6"/>`;for(const z of [0,1000,2000,3000,4000]){let v=y(z);a+=`<line x1="53" x2="596" y1="${v}" y2="${v}" stroke="#c9dbe2" stroke-dasharray="3 5"/><text x="45" y="${v+4}" font-size="12" text-anchor="end" fill="#587486">${z}m</text>`}a+=`<path d="M53 180 L145 139 L225 160 L328 72 L416 136 L503 104 L596 166 L596 182 L53 182Z" fill="#87a69d"/><path d="M53 180 L145 139 L225 160 L328 72 L416 136 L503 104 L596 166" fill="none" stroke="#547f72" stroke-width="2"/><line x1="53" x2="596" y1="${yy}" y2="${yy}" stroke="#c16f28" stroke-width="3" stroke-dasharray="8 5"/><circle cx="328" cy="${yy}" r="6" fill="#c16f28" stroke="white" stroke-width="2"/><rect x="365" y="${Math.max(6,yy-28)}" width="215" height="22" rx="6" fill="#925c23"/><text x="472" y="${Math.max(6,yy-28)+15}" text-anchor="middle" font-size="12" fill="white">观景点 ${fmt(h)}m</text><rect x="76" y="14" width="195" height="30" rx="9" fill="white" fill-opacity=".94"/><text x="173" y="34" font-size="14" text-anchor="middle" fill="#36596c">云层上下边界：未知</text></svg>`;return a}
+function humidityChart(profiles,h){if(!profiles.length)return '<p class="small">缺少湿度剖面。</p>';const pts=profiles.flatMap(p=>p.pts.filter(v=>finite(v.rh)));if(!pts.length)return '<p class="small">缺少有效湿度数据。</p>';const W=640,H=330,L=57,R=25,T=20,B=43,minH=Math.min(h,...pts.map(p=>p.h)),maxH=Math.max(h,...pts.map(p=>p.h));const x=v=>L+Math.max(0,Math.min(100,v))/100*(W-L-R),y=v=>T+(maxH-v)/Math.max(1,maxH-minH)*(H-T-B);let s='<svg viewBox="0 0 640 330" role="img" aria-label="气压层相对湿度与海拔高度曲线">';for(let n=0;n<=4;n++){const xx=x(n*25),hh=minH+(maxH-minH)*n/4,yy=y(hh);s+=`<line x1="${xx}" y1="${T}" x2="${xx}" y2="${H-B}" stroke="#dbe5e9"/><text x="${xx}" y="${H-18}" font-size="11" text-anchor="middle" fill="#617789">${n*25}%</text><line x1="${L}" y1="${yy}" x2="${W-R}" y2="${yy}" stroke="#e6edef"/><text x="${L-5}" y="${yy+4}" font-size="10" text-anchor="end" fill="#617789">${fmt(hh)}</text>`}s+=`<line x1="${L}" y1="${y(h)}" x2="${W-R}" y2="${y(h)}" stroke="#c16f28" stroke-width="2" stroke-dasharray="6 4"/>`;for(const p of profiles){const col=p.key==='ecmwf'?'#286b83':'#b07a1b';const valid=p.pts.filter(v=>finite(v.rh));if(valid.length>1)s+=`<polyline points="${valid.map(v=>x(v.rh)+','+y(v.h)).join(' ')}" fill="none" stroke="${col}" stroke-width="2.5"/>`;for(const v of valid)s+=`<circle cx="${x(v.rh)}" cy="${y(v.h)}" r="2.5" fill="${col}"/>`}return '<div class="small">蓝色 ECMWF · 金色 GFS · 虚线为观景高度。高湿层不等于实测云层。</div>'+s+'</svg>'}
+
+async function cloudRequest(m,lat,lon,date){const lev=m.key==='gfs'?[1000,975,950,925,900,875,850,825,800,775,750,725,700,675,650,625,600,575,550,525,500]:[1000,925,850,700,600,500];const vars=lev.flatMap(p=>['cloud_cover_'+p+'hPa','relative_humidity_'+p+'hPa','geopotential_height_'+p+'hPa']);const url=qurl(m.url,{latitude:lat,longitude:lon,models:m.key==='gfs'?'gfs_global':'ecmwf_ifs025',hourly:vars.join(','),timezone:tz,start_date:date,end_date:date});const j=await jsonFetch(url),hours=[4,5,6,7,8],indexes=hours.map(hr=>j.hourly?.time?.indexOf(date+'T'+String(hr).padStart(2,'0')+':00')??-1),i=indexes[1];if(i<0)throw Error('05:00 时次无数据');const rows=lev.map(p=>({p,h:j.hourly?.['geopotential_height_'+p+'hPa']?.[i],cloud:j.hourly?.['cloud_cover_'+p+'hPa']?.[i],rh:j.hourly?.['relative_humidity_'+p+'hPa']?.[i]})).map(r=>({p:r.p,h:finite(r.h)?r.h:null,cloud:finite(r.cloud)?r.cloud:null,rh:finite(r.rh)?r.rh:null}));const hourly=hours.map((hr,k)=>({hr,rows:lev.map(p=>{const idx=indexes[k],a=idx<0?null:j.hourly?.['geopotential_height_'+p+'hPa']?.[idx],c=idx<0?null:j.hourly?.['cloud_cover_'+p+'hPa']?.[idx];return {p,h:finite(a)?a:null,cloud:finite(c)?c:null}})}));return {name:m.name,rows,hourly,url};}
+function cloudVerticalChart(data,h){const usable=data.filter(d=>d.rows&&d.rows.some(r=>r.h!==null&&r.cloud!==null));if(!usable.length)return '<p class="small">逐层云量无数据，无法绘制曲线。</p>';const all=usable.flatMap(d=>d.rows.filter(r=>r.h!==null&&r.cloud!==null)),W=640,H=340,L=62,R=25,T=24,B=48,lo=Math.min(h,...all.map(r=>r.h)),hi=Math.max(h,...all.map(r=>r.h)),x=v=>L+v/100*(W-L-R),y=v=>T+(hi-v)/Math.max(1,hi-lo)*(H-T-B);let z='<svg viewBox="0 0 640 340" role="img" aria-label="05时逐气压层云量与海拔高度剖面">';for(let i=0;i<=4;i++){let xx=x(i*25),alt=lo+(hi-lo)*i/4,yy=y(alt);z+=`<line x1="${xx}" y1="${T}" x2="${xx}" y2="${H-B}" stroke="#dbe5e9"/><text x="${xx}" y="${H-20}" text-anchor="middle" font-size="12" fill="#617789">${i*25}%</text><line x1="${L}" y1="${yy}" x2="${W-R}" y2="${yy}" stroke="#e4ecef"/><text x="${L-6}" y="${yy+4}" text-anchor="end" font-size="11" fill="#617789">${fmt(alt)}m</text>`}z+=`<line x1="${L}" y1="${y(h)}" x2="${W-R}" y2="${y(h)}" stroke="#c16f28" stroke-width="2" stroke-dasharray="7 5"/>`;for(const d of usable){const color=d.name==='GFS'?'#b07a1b':'#286b83',r=d.rows.filter(v=>v.h!==null&&v.cloud!==null).sort((a,b)=>a.h-b.h);if(r.length>1)z+=`<polyline points="${r.map(v=>x(v.cloud)+','+y(v.h)).join(' ')}" fill="none" stroke="${color}" stroke-width="2.5"/>`;for(const v of r)z+=`<circle cx="${x(v.cloud)}" cy="${y(v.h)}" r="3" fill="${color}"/>`;}return '<p class="small">蓝色 ECMWF · 金色 GFS · 橙色虚线：观景高度。仅连接有效模式气压层，不代表连续云层边界。</p>'+z+'</svg>';}
+function cloudHourlyChart(data,h){const hours=[4,5,6,7,8];const series=data.map(d=>{if(!d.hourly)return {name:d.name,near:hours.map(()=>null),below:hours.map(()=>null)};return {name:d.name,near:d.hourly.map(t=>{const r=t.rows.filter(v=>v.h!==null&&v.cloud!==null&&Math.abs(v.h-h)<=450);return r.length?Math.max(...r.map(v=>v.cloud)):null}),below:d.hourly.map(t=>{const r=t.rows.filter(v=>v.h!==null&&v.cloud!==null&&v.h<h-150&&v.h>=h-1200);return r.length?Math.max(...r.map(v=>v.cloud)):null})}});let out='<p class="small">04:00—08:00 北京时间。每小时取指定高度范围内有效气压层的最大云量；不是整层平均值，也不是云海发生概率。</p><div style="overflow-x:auto"><table><thead><tr><th>模式 / 范围</th>'+hours.map(t=>'<th>'+String(t).padStart(2,'0')+':00</th>').join('')+'</tr></thead><tbody>';for(const d of series){for(const [key,label] of [['near','观景±450m'],['below','下方150—1200m']])out+='<tr><td>'+esc(d.name)+' '+label+'</td>'+d[key].map(v=>'<td>'+(v===null?'无数据':fmt(v)+'%')+'</td>').join('')+'</tr>';}out+='</tbody></table></div>';const W=640,H=275,L=50,R=25,T=22,B=45,x=i=>L+i/4*(W-L-R),y=v=>T+(100-v)/100*(H-T-B);let svg='<svg viewBox="0 0 640 275" role="img" aria-label="04至08时云量变化曲线">';for(let j=0;j<=4;j++){const yy=y(j*25);svg+=`<line x1="${L}" y1="${yy}" x2="${W-R}" y2="${yy}" stroke="#e2eaed"/><text x="${L-8}" y="${yy+4}" text-anchor="end" font-size="11" fill="#627587">${j*25}%</text>`;}for(let i=0;i<5;i++)svg+=`<text x="${x(i)}" y="${H-17}" text-anchor="middle" font-size="12" fill="#627587">${String(hours[i]).padStart(2,'0')}:00</text>`;for(const d of series){for(const [key,color,dash] of [['near',d.name==='GFS'?'#b07a1b':'#286b83',''],['below',d.name==='GFS'?'#b07a1b':'#286b83','5 5']]){let previous=null;d[key].forEach((v,i)=>{if(v!==null){if(previous!==null)svg+=`<line x1="${x(previous.i)}" y1="${y(previous.v)}" x2="${x(i)}" y2="${y(v)}" stroke="${color}" stroke-width="2.5" ${dash?'stroke-dasharray="'+dash+'"':''}/>`;svg+=`<circle cx="${x(i)}" cy="${y(v)}" r="3" fill="${color}"/>`;previous={i,v};}else previous=null;});}}return out+'<p class="small">蓝色 ECMWF、金色 GFS；实线为观景点附近，虚线为下方。缺失时断线，不补值。</p>'+svg+'</svg>';}
+function cloudAssessment(all,h){const good=all.filter(x=>x.rows),g=good.find(x=>x.name==='GFS')||good[0];if(!g)return {title:'云量无数据',detail:'两套模式的逐层云量请求均失败；不作云层位置推断。'};const near=g.rows.filter(r=>r.h!==null&&Math.abs(r.h-h)<=450&&r.cloud!==null);const below=g.rows.filter(r=>r.h!==null&&r.h<h-150&&r.h>=h-1200&&r.cloud!==null);const valid=g.rows.filter(r=>r.cloud!==null&&r.h!==null);if(!near.length)return {title:'观景高度附近：无数据',detail:'缺少足够接近观景高度的有效云量层；不推断云底云顶。'};const maxNear=Math.max(...near.map(r=>r.cloud));const maxBelow=below.length?Math.max(...below.map(r=>r.cloud)):null;let title=maxNear>=50?'观景高度附近有较强模式云量信号':maxNear>=20?'观景高度附近有一定云量信号':'观景高度附近模式云量信号弱';let detail=g.name+'：观景高度±450米内 '+near.length+' 层，最大云量 '+fmt(maxNear)+'%；下方150—1200米 '+(maxBelow===null?'无数据':'最大云量 '+fmt(maxBelow)+'%')+'。有效层 '+valid.length+'/'+g.rows.length+'。';if(maxBelow!==null&&maxBelow>=50&&maxNear<20)detail+=' 下方有云量而观景高度附近较少，提示可能存在上下差异，但不能确定云顶或保证看到云海。';else if(maxNear<20)detail+=' 这不排除模式未解析的浅薄山谷雾。';else detail+=' 云量不等于连续云层，也不代表现场一定被雾包围。';if(good.length===1)detail+=' 另一套模式云量无数据，无法交叉验证。';return {title,detail};}
+function renderCloudEvidence(){const a=cloudAssessment(cloudEvidence,current.h);$('cloudEvidenceTitle').textContent=a.title;$('cloudEvidenceText').textContent=a.detail;const groups=cloudEvidence.map(x=>{if(!x.rows)return '<h3>'+esc(x.name)+'</h3><p>无数据：'+esc(x.error)+'</p>';const valid=x.rows.filter(r=>r.cloud!==null).length;return '<h3>'+esc(x.name)+' · 有效云量 '+valid+'/'+x.rows.length+' 层</h3><div style="overflow-x:auto"><table><thead><tr><th>气压层</th><th>海拔m</th><th>云量%</th><th>湿度%</th><th>位置</th></tr></thead><tbody>'+x.rows.map(r=>'<tr><td>'+r.p+'</td><td>'+fmt(r.h)+'</td><td>'+fmt(r.cloud)+'</td><td>'+fmt(r.rh)+'</td><td>'+(r.h===null?'无数据':r.h<current.h?'下方':'上方')+'</td></tr>').join('')+'</tbody></table></div>'}).join('');$('cloudProfileBody').innerHTML=groups+'<p class="small">0%是模式明确预报零云量；“无数据”表示未获得有效数值。云量气压层不是云底/云顶。ECMWF和GFS产品可能有不同后处理方式；模式网格不能解析所有山谷雾。</p>';}
+
+// V4.12.2：云雾形成条件与云海可观赏条件严格区分。
+// 观景高度附近大量云量 + 低能见度：倾向山顶被云雾包围；下方有云而山顶附近少云：相对有利。
+// 这些是经验指数（0—100），不是经过观测校准的概率；没有有效数据不当成0%。
+function watchability(e, rain, vis, data, evidence){
+ const notes=[]; const base=finite(e.score)?e.score:null;
+ if(base===null)return {score:null,title:'核心预报缺失',notes:['云雾形成基础数据不足'],near:null,below:null};
+ let factor=1;
+ const summaries=evidence.filter(m=>Array.isArray(m.hourly)).map(m=>{
+   const hours=m.hourly.filter(t=>t.hr>=4&&t.hr<=8);
+   const series=hours.map(t=>{
+     const near=t.rows.filter(r=>finite(r.h)&&finite(r.cloud)&&Math.abs(r.h-data.h)<=450);
+     const below=t.rows.filter(r=>finite(r.h)&&finite(r.cloud)&&r.h<data.h-150&&r.h>=data.h-1200);
+     return {near:near.length?Math.max(...near.map(r=>r.cloud)):null,below:below.length?Math.max(...below.map(r=>r.cloud)):null};
+   });
+   const ns=series.map(v=>v.near).filter(finite),bs=series.map(v=>v.below).filter(finite);
+   return {name:m.name,near:ns.length?avg(ns):null,below:bs.length?avg(bs):null,validNear:ns.length};
+ });
+ const validNear=summaries.filter(m=>finite(m.near));
+ // GFS层更密，优先GFS；有ECMWF时轻度加权，减少单模式偏差。
+ const g=validNear.find(m=>m.name==='GFS');const ec=validNear.find(m=>m.name==='ECMWF');
+ let near=g&&ec?g.near*.7+ec.near*.3:g?g.near:ec?ec.near:null;
+ const belowRows=summaries.filter(m=>finite(m.below));const gb=belowRows.find(m=>m.name==='GFS');const eb=belowRows.find(m=>m.name==='ECMWF');
+ let below=gb&&eb?gb.below*.7+eb.below*.3:gb?gb.below:eb?eb.below:null;
+ if(finite(near)){
+   const c=near>=85?.48:near>=70?.57:near>=50?.73:near>=30?.87:near>=15?.94:1;
+   factor*=c;
+   notes.push('观景高度±450米逐小时模式云量均值约'+fmt(near)+'%，可见度折减系数'+c.toFixed(2));
+   if(finite(below)&&below>=40&&near<=20){factor=Math.min(1,factor*1.07);notes.push('观景点下方云量较多、附近较少：略偏有利');}
+   if(finite(below)&&near>=70&&below>=40)notes.push('山顶附近及山下均有明显云量：存在处于云中而非云上的风险');
+ }else notes.push('观景高度附近逐层云量无数据：不凭空推断清晰天空');
+ if(finite(vis.min)){
+   const km=vis.min/1000;
+   const c=km<1?.45:km<3?.64:km<5?.80:km<8?.92:1;
+   factor*=c;
+   notes.push('网格最低能见度'+km.toFixed(1)+'km，可观赏性系数'+c.toFixed(2)+'（不等于山顶实测）');
+ }else notes.push('能见度无数据：不按晴朗处理，也不虚构扣分');
+ let value=Math.round(Math.max(0,Math.min(100,base*factor)));
+ if(finite(rain.cap)){value=Math.min(value,rain.cap);notes.push('日出降雨风险限制参考指数上限'+rain.cap);}
+ if(!finite(rain.cap)&&rain.limited)notes.push('部分降雨资料缺失；未据此认定无雨');
+ const highWash=(finite(near)&&near>=65)&&(finite(vis.min)&&vis.min<3000||near>=85);
+ const title=highWash?'山顶洗头风险偏高':finite(vis.min)&&vis.min<1000?'能见度很低，观赏不利':value>=70?'观赏条件相对有利':value>=50?'有机会，但需复核云层位置':value>=30?'观赏条件偏弱':'不宜仅为云海专程出发';
+ return {score:value,title,near,below,notes,summaries,formation:base};
+}
+function updateQuickUI(d,e,rain,vis,watch){
+ const lat=Number($('lat').value),lon=Number($('lon').value);
+ const formatCN=new Intl.DateTimeFormat('zh-CN',{timeZone:tz,year:'numeric',month:'2-digit',day:'2-digit',hour:'2-digit',minute:'2-digit',hour12:false});
+ const changed=formatCN.format(new Date());
+ const defaultPlace=Math.abs(lat-31.044687)<.00001&&Math.abs(lon-116.265979)<.00001?'牛草山':'自定义观景点';
+ $('quickLocation').textContent=defaultPlace+' · '+d.date+' · 海拔'+fmt(d.h)+'m';
+ $('quickTitle').textContent=watch.title;
+ $('quickScore').textContent=finite(watch.score)?'可观赏条件指数 '+watch.score+'/100（非概率）':'可观赏条件指数：无数据';
+ $('quickSymbol').textContent=watch.score===null?'？':watch.title.includes('洗头')?'🌫️':watch.score>=70?'🌤️':watch.score>=45?'☁️':'🌧️';
+ $('quickSunrise').textContent=d.surf?.sunrise?.slice(11,16)||'无数据';
+ $('quickRain').textContent=rain.status||'无数据';
+ $('quickVisibility').textContent=finite(vis.min)?(vis.min/1000).toFixed(1)+' km':'无数据';
+ const warning=watch.title.includes('洗头')?'观景高度附近云量较高，注意山顶可能被云雾包围。':finite(vis.min)&&vis.min<3000?'预报能见度较低，可能看不清云海。':rain.cap!==null?'日出时段存在降雨风险，请谨慎安排。':watch.score===null?'关键预报缺失，暂时无法可靠判断。':'请结合低云位置、能见度、降水和现场天气决定是否出发。';
+ $('quickReason').textContent=warning;
+ const failure=[...(d.errors||[]),...(d.rain||[]).filter(x=>x.error).map(x=>x.name+'降水缺失'),...(d.visibility?.error?['能见度缺失']:[])];
+ $('quickUpdated').textContent='查询时间：'+changed+'（北京时间） · 数据日期：'+d.date+' · '+(failure.length?'部分数据缺失，见专业分析':'本次请求已完成')+' · 模式预报非现场实测';
+}
+function render(){if(!current)return;const d=current,e=evaluate(d), rain=rainfallSummary(d.rain||[],d.surf?.sunrise||null,e.score),vis=visibilitySummary(d.visibility,d.surf?.sunrise||null,d.surf?.low);const watch=watchability(e,rain,vis,d,cloudEvidence);updateQuickUI(d,e,rain,vis,watch);$('washRisk').textContent=watch.title;$('washReason').textContent='观景高度附近云量：'+fmt(watch.near)+'%；下方云量：'+fmt(watch.below)+'%。两者都是04:00—08:00模式逐层云量聚合，非真实云层边界。';$('watchBreakdown').textContent=watch.notes.join('；');$('watchExpert').innerHTML=watch.notes.map(t=>'<div style="padding:6px 0;border-bottom:1px solid #e0e8ea">'+esc(t)+'</div>').join('')+'<p>算法：形成指数 × 云量系数 × 能见度系数，再考虑降雨上限。模型分歧、复杂地形和局地雾仍可造成误报漏报；不是发生概率。</p>';$('visibilityStatus').textContent=vis.status;$('visibilityDetail').textContent=vis.detail;$('visibilityValues').textContent=vis.rows.length?'可用时次：'+vis.rows.map(r=>r.time.slice(11,16)+' '+(finite(r.m)?(r.m/1000).toFixed(1)+'km':'无数据')).join(' · '):'可用时次：无数据';$('rainStatus').textContent=rain.status;$('rainDetail').textContent=rain.detail;$('viewIndex').textContent=e.score===null?'形成指数：无数据':('云雾形成条件：'+e.score+'/100；降水核查：'+rain.status+'。最终请以页面顶部的可观赏条件指数为准。');$('rainExpert').innerHTML=rain.summaries.map(m=>'<div style="margin:8px 0"><strong>'+esc(m.name)+'</strong> · 日出窗口最大逐小时降水：'+fmt(m.max,1)+' mm'+(m.error?' · 无数据（'+esc(m.error)+'）':'')+'<div style="overflow-x:auto"><table><thead><tr><th>预报小时（前一小时累计）</th><th>降水 mm</th></tr></thead><tbody>'+(m.items||[]).map(r=>'<tr><td>'+esc(r.time.slice(11,16))+'</td><td>'+(finite(r.mm)?fmt(r.mm,1):'无数据')+'</td></tr>').join('')+'</tbody></table></div></div>').join('')+'<p class="small">表格展示03:00—09:00；降水为前一小时累计量。只有与日出前30分钟至日出后60分钟重叠的小时进入降雨评分限制。≥0.2 / ≥0.5mm阈值及评分上限是尚未实况校准的经验规则。</p>';$('scoreBreakdown').innerHTML=
+ e.parts.map(p=>'<div style="padding:5px 0;border-bottom:1px solid #dce5e9"><strong>'+esc(p.name)+'</strong>：'+fmt(p.value)+' /100，权重 '+p.weight+'<div class="small">'+esc(p.reason)+'</div></div>').join('')+
+ '<p class="small">实际参与评分的权重合计：'+e.coverage+'。结果按有效因素重新归一，不是发生概率；单项缺失不作零分处理。</p>';
+ $('verdict').textContent=watch.title;$('scoreText').textContent=watch.score===null?'可观赏条件指数：无数据':`可观赏条件指数 ${watch.score}/100 · 非真实概率`;$('formationCompare').textContent=e.score===null?'原始云雾形成指数：无数据':'原始云雾形成指数：'+e.score+'/100（形成≠能看见）';$('bar').style.width=(watch.score??0)+'%';$('invSimple').textContent=d.profiles.length?e.invCount+'/'+d.profiles.length+' 模式':'—';$('rhSimple').textContent=e.nearValues.length?e.nearValues.map(v=>fmt(v)+'%').join(' / '):'无数据';$('lowSimple').textContent=fmt(d.surf?.low)+'%';$('agreeSimple').textContent=d.profiles.length===2?'两套可用':'资料不全';let parts=[];if(e.invCount)parts.push('观景高度附近识别到逆温');else parts.push('未识别到覆盖观景高度的逆温层');if(e.nearValues.length)parts.push('观景高度湿度：'+e.nearValues.map(v=>fmt(v)+'%').join(' / ')+'（按模式分别显示）');else parts.push('观景高度湿度无有效气压层插值');if(finite(e.below))parts.push('下方300米湿度约'+fmt(e.below)+'%');if(d.surf)parts.push('日出前后低云量约'+fmt(d.surf.low)+'%、风速约'+fmt(d.surf.wind)+'km/h');const sunrise=d.surf?.sunrise||null;
+$('sunriseText').textContent=sunrise?sunrise.slice(11,16)+'（北京时间）':'暂无日出时间';
+$('windowText').textContent=sunrise?'建议日出前约30分钟到达，重点观察日出前30分钟至日出后60分钟；实际窗口需结合云雾变化。':'日出时间暂不可用；请查看实时天气。';
+const sf=d.surf;
+$('signalText').textContent=sf?`低云量 ${fmt(sf.low)}% · 近地面相对湿度 ${fmt(sf.rh)}% · 风速 ${fmt(sf.wind)} km/h · 降水概率 ${fmt(sf.rainp)}% · 降水量均值 ${fmt(sf.rain,1)} mm/h`:'关键气象信号缺失，暂不建议仅凭逆温判断。';
+const advice=e.score===null?'资料不足，暂缓决定':rain.cap===30?'日出时段降雨明显，不建议专程出发':rain.cap===45?'日出可能有雨，谨慎安排':rain.cap===65?'降雨预报不一致，临行复核':rain.view>=75?'值得重点关注':rain.view>=55?'建议前一晚复核':rain.view>=35?'不建议仅为云海专程出发':'当前条件不利';
+const tripAdvice=watch.score===null?'核心资料不足，暂缓决定':watch.title;$('tripAdvice').textContent=tripAdvice;
+$('adviceReason').textContent=e.score===null?'请等待模式及地面预报完整后复核。':'可观赏性综合了观景附近逐层云量、能见度与日出降雨；云雾形成指数只作背景信息。'+vis.detail+' 出发前请复核最新雷达、山顶天气、道路和现场实况；网格数据不等同山顶实测。';
+$('cloudPosition').textContent='云层位置：目前无法可靠判定';$('cloudDiagram').innerHTML=cloudDiagram(d.h);$('cloudCaution').textContent='逐层模式云量用于判断云量信号，不代表真实云底云顶；气压层湿度和逆温只用于辅助判断。观景点 '+fmt(d.h)+'m；图中地形仅为示意，并非真实地形剖面。';$('rhChart').innerHTML=humidityChart(d.profiles,d.h);$('cloudVerticalChart').innerHTML=cloudVerticalChart(cloudEvidence,d.h);$('cloudHourlyChart').innerHTML=cloudHourlyChart(cloudEvidence,d.h);renderCloudEvidence();
+$('plain').textContent='原始形成因素：'+parts.join('；')+'。'+watch.title+'。'+(e.enough?'请结合现场实况决定是否出行。':'核心数据不足，暂不输出条件指数。');$('chart').innerHTML=chart(d.profiles,d.h);$('expertDetails').innerHTML='<div class="grid" style="margin-top:10px"><div class="metric"><span>低云量 04—08时</span><b>'+fmt(d.surf?.low)+'%</b></div><div class="metric"><span>近地面湿度</span><b>'+fmt(d.surf?.rh)+'%</b></div><div class="metric"><span>风速</span><b>'+fmt(d.surf?.wind)+' km/h</b></div><div class="metric"><span>降水概率</span><b>'+fmt(d.surf?.rainp)+'%</b></div></div>'+d.profiles.map(p=>`<h3>${p.name} · ${p.time.slice(11,16)}</h3><p class="small">逆温：${p.inv.length?esc(p.inv.map(v=>fmt(v.low)+'—'+fmt(v.high)+'m / '+fmt(v.rate,2)+'℃/100m').join('；')):'未识别'}；观景高度位于逆温层内：${p.inside?'是':'否'}；观景湿度插值 ${fmt(p.at?.value,1)}%（层距 ${fmt(p.at?.gap)}m）；下方300m ${fmt(p.below?.value,1)}%；上方300m ${fmt(p.above?.value,1)}%。</p><details><summary>${p.name} 原始气压层（${p.pts.length}）</summary><div style="overflow:auto"><table><thead><tr><th>hPa</th><th>高度m</th><th>气温℃</th><th>RH%</th></tr></thead><tbody>${p.pts.map(v=>`<tr><td>${v.p}</td><td>${fmt(v.h)}</td><td>${fmt(v.t,1)}</td><td>${fmt(v.rh)}</td></tr>`).join('')}</tbody></table></div></details>`).join('')+(d.errors.length?'<div class="notice">数据提示：'+esc(d.errors.join('；'))+'</div>':'')+'<div class="notice">诊断阈值：相邻气压层温升超过0.2℃且层距超过20m；湿度插值仅在层距≤900m时进行。条件指数为未校准启发式模型，不是云海发生概率。</div>'}
+function tabs(showExpert){expert=showExpert;$('simplePanel').classList.toggle('hidden',expert);$('expertPanel').classList.toggle('hidden',!expert);$('simple').className=expert?'secondary':'active';$('expert').className=expert?'active':'secondary'}$('simple').onclick=()=>tabs(false);$('expert').onclick=()=>tabs(true);
+let busy=false;async function run(){if(busy)return;const lat=Number($('lat').value),lon=Number($('lon').value),h=Number($('elev').value),date=$('date').value;if(!finite(lat)||lat< -90||lat>90||!finite(lon)||lon< -180||lon>180||!finite(h)||h< -500||h>9000||date<today||date>plus(today,15)){$('status').textContent='请输入有效坐标、海拔和未来15天内的日期';return}busy=true;cloudEvidence=[];$('run').disabled=true;$('quickTitle').textContent='正在更新预报…';$('quickScore').textContent='读取最新预报数据';$('quickUpdated').textContent='数据读取中，请勿将上一轮结果作为最新结果';$('status').textContent='正在获取气压层、云量、降雨和能见度数据（每项最长12秒）…';try{const tasks=[...models.map(m=>()=>profile(m,lat,lon,date)),()=>surface(lat,lon,date),...models.map(m=>()=>cloudRequest(m,lat,lon,date)),...models.map(m=>()=>rainRequest(m,lat,lon,date)),()=>visibilityRequest(lat,lon,date)];
+ // 限制为最多两个并发请求；单项有超时，失败不阻塞其他数据。
+ const all=new Array(tasks.length);let next=0,finished=0;
+ async function worker(){
+  while(next<tasks.length){
+   const k=next++;
+   let result;
+   for(let attempt=0;attempt<2;attempt++){
+    try{result={status:'fulfilled',value:await tasks[k]()};break}
+    catch(err){
+     const reason=String(err?.message||err);
+     if(attempt===0&&/too many concurrent requests|too many requests|429|rate limit/i.test(reason)){
+      await new Promise(resolve=>setTimeout(resolve,1600));
+     }else{result={status:'rejected',reason:err};break}
+    }
+   }
+   all[k]=result||{status:'rejected',reason:Error('接口请求未完成')};
+   finished++;
+   $('status').textContent='正在读取气象数据（已完成 '+finished+'/'+tasks.length+' 项）…';
+  }
+ }
+ await Promise.all([worker(),worker()]);
+ cloudEvidence=all.slice(3,5).map((r,i)=>r.status==='fulfilled'?r.value:{name:models[i].name,error:r.reason?.message||'请求失败'});const errors=[],profiles=[];all.slice(0,2).forEach((r,i)=>r.status==='fulfilled'?profiles.push(diagnose(r.value,h)):errors.push(models[i].name+': '+r.reason.message));const sr=all[2],surf=sr.status==='fulfilled'?sr.value:null;if(!surf)errors.push('近地面预报: '+sr.reason.message);const rain=all.slice(5,7).map((r,i)=>r.status==='fulfilled'?r.value:{name:models[i].name,error:r.reason?.message||'请求失败',rows:[]});const vr=all[7];const visibility=vr?.status==='fulfilled'?vr.value:{error:vr?.reason?.message||'无数据',rows:[]};current={profiles,surf,h,date,errors,rain,visibility};render();$('status').textContent=`${date} · ${profiles.length}/2 套垂直模式可用${surf?' · 地面数据可用':' · 地面数据缺失'} · 降雨 ${rain.filter(x=>!x.error).length}/2 套可用${rain.some(x=>x.error)?'（部分接口失败，已标记无数据）':''}`}catch(err){$('status').textContent='请求失败：'+err.message;$('quickTitle').textContent='查询失败';$('quickScore').textContent='请检查网络或稍后重试';$('quickUpdated').textContent='本次未能成功更新预报，请勿依据之前结果决策';}finally{busy=false;$('run').disabled=false}}$('run').onclick=run;run();
+})();
+</script>
+<script>
+(()=>{'use strict';
+const el=id=>document.getElementById(id);
+let mp=null, pin=null, candidate=null, req=0, lastSearch=0;
+const preset={lat:31.044687,lon:116.265979,h:1350,name:'牛草山 · 已确认观景位置'};
+const n6=x=>Number(x).toFixed(6);
+const msg=x=>el('mapMessage').textContent=x;
+function position(lat,lon,name,knownHeight=null){
+ candidate={lat,lon,name,dem:null,source:null,override:knownHeight!==null};
+ el('mapLat').textContent=n6(lat);el('mapLon').textContent=n6(lon);
+ el('mapDem').textContent=knownHeight!==null?'未查询（使用已确认高度）':'查询中…';
+ el('mapSource').textContent=knownHeight!==null?'已确认观景点':'SRTM 30m';
+ el('mapHeight').value=knownHeight===null?'':String(knownHeight);
+ el('mapApply').disabled=knownHeight===null;
+ el('mapElevationNote').textContent=knownHeight!==null?'已填入先前确认的1350米，可人工修改。':'将查询数字高程（90m / 30m来源），供你确认或修正。';
+ if(mp){mp.setView([lat,lon],Math.max(mp.getZoom(),13));if(pin)pin.setLatLng([lat,lon]);else pin=L.marker([lat,lon]).addTo(mp);}
+ if(knownHeight===null)fetchElevation(candidate,++req);
+ else {++req;msg('已选中 '+name+'。确认位置和高度后点击「填入预测条件」。');}
+}
+async function fetchJSON(u,timeout=9000){
+ const c=new AbortController(), t=setTimeout(()=>c.abort(),timeout);
+ try{const r=await fetch(u,{signal:c.signal,headers:{'Accept':'application/json'}});if(!r.ok)throw Error('HTTP '+r.status);return await r.json()}finally{clearTimeout(t)}
+}
+function usableHeight(v){return typeof v==='number'&&Number.isFinite(v)&&v>=-500&&v<=9000}
+async function fetchElevation(c,serial){
+ msg('正在获取数字高程，首选 Open-Meteo，失败后尝试备用源…');
+ let h=null,source='',error=[];
+ const url='https://api.open-meteo.com/v1/elevation?latitude='+n6(c.lat)+'&longitude='+n6(c.lon);
+ try{const j=await fetchJSON(url);if(usableHeight(j.elevation?.[0])){h=Math.round(j.elevation[0]);source='Copernicus GLO-90（约90m DEM）'}else throw Error('未返回有效高度')}
+ catch(e){error.push('Open-Meteo：'+e.message)}
+ if(serial!==req)return;
+ if(h===null){
+   try{const j=await fetchJSON('https://api.opentopodata.org/v1/srtm30m?locations='+encodeURIComponent(n6(c.lat)+','+n6(c.lon)));
+     const v=j.results?.[0]?.elevation;if(!usableHeight(v))throw Error('未返回有效高度');h=Math.round(v);source='SRTM30m（约30m DEM）'}
+   catch(e){error.push('OpenTopoData：'+e.message)}
+ }
+ if(serial!==req)return;
+ if(h!==null){
+  c.dem=h;c.source=source;el('mapDem').textContent=h+' m（DEM估算）';el('mapSource').textContent=source;
+  // 用户先手填海拔时，不要用迟到的接口结果覆盖
+  if(el('mapHeight').value.trim()==='')el('mapHeight').value=String(h);
+  el('mapApply').disabled=false;
+  el('mapElevationNote').textContent='自动海拔是数字地形模型估算值，不是山顶实测。悬崖和观景台请核实；可手动修正。';
+  msg('已获取数字高程。请确认地图点位是否准确，必要时改正海拔。');
+ }else{
+  el('mapDem').textContent='无数据';el('mapSource').textContent='两个公开高程源均未返回';
+  el('mapElevationNote').textContent='自动高程失败，可自行填写观景高度继续预测。';
+  msg('自动高程不可用（'+error.join('；')+'）。填写已知海拔即可继续。');
+ }
+}
+function init(){
+ if(mp){setTimeout(()=>mp.invalidateSize(),100);return true}
+ if(typeof L==='undefined'){msg('地图组件加载失败。请检查网络；仍可手动输入坐标和海拔。');return false}
+ mp=L.map('mapPicker',{zoomControl:true}).setView([preset.lat,preset.lon],12);
+ L.tileLayer('https://tile.openstreetmap.org/{z}/{x}/{y}.png',
+   {maxZoom:19,attribution:'&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'}).addTo(mp);
+ mp.on('click',e=>position(e.latlng.lat,e.latlng.lng,'地图自选观景位置'));
+ setTimeout(()=>mp.invalidateSize(),150);
+ return true;
+}
+el('mapToggle').addEventListener('click',()=>{
+ const p=el('mapPanel'),willShow=p.hidden;p.hidden=!willShow;
+ el('mapToggle').textContent=willShow?'收起地图':'打开地图选点';
+ if(willShow)init();
+});
+el('mapPreset').addEventListener('click',()=>{
+ el('mapPanel').hidden=false;el('mapToggle').textContent='收起地图';
+ init();position(preset.lat,preset.lon,preset.name,preset.h);
+});
+el('mapCoordBtn').addEventListener('click',()=>{
+ const raw=el('mapCoord').value.trim();
+ const match=raw.match(/^\s*([+-]?\d+(?:\.\d+)?)\s*[,，\s]+\s*([+-]?\d+(?:\.\d+)?)\s*$/);
+ if(!match){msg('坐标格式：纬度, 经度，例如 31.044687, 116.265979');return}
+ const lat=Number(match[1]),lon=Number(match[2]);
+ if(Math.abs(lat)>90||Math.abs(lon)>180){msg('坐标超出范围，请检查纬度和经度顺序。');return}
+ position(lat,lon,'坐标指定观景点');
+});
+async function placeSearch(q){
+ const errs=[];
+ try{
+  const j=await fetchJSON('https://photon.komoot.io/api/?q='+encodeURIComponent(q)+'&limit=5&lang=zh');
+  const items=(j.features||[]).map(x=>({name:[x.properties?.name,x.properties?.city,x.properties?.state].filter(Boolean).join(' · '),lat:x.geometry?.coordinates?.[1],lon:x.geometry?.coordinates?.[0]})).filter(x=>Number.isFinite(x.lat)&&Number.isFinite(x.lon));
+  if(items.length)return {items,source:'Photon'};
+ }catch(e){errs.push('Photon '+e.message)}
+ try{
+  const j=await fetchJSON('https://nominatim.openstreetmap.org/search?format=json&limit=5&countrycodes=cn&q='+encodeURIComponent(q));
+  const items=(Array.isArray(j)?j:[]).map(x=>({name:x.display_name,lat:Number(x.lat),lon:Number(x.lon)})).filter(x=>Number.isFinite(x.lat)&&Number.isFinite(x.lon));
+  if(items.length)return {items,source:'Nominatim'};
+ }catch(e){errs.push('Nominatim '+e.message)}
+ return {items:[],source:'',errors:errs};
+}
+el('mapSearchBtn').addEventListener('click',async()=>{
+ const q=el('mapQuery').value.trim();if(q.length<2){msg('请输入至少2个字的地点名称。');return}
+ if(Date.now()-lastSearch<1100){msg('搜索间隔至少1秒，请稍后重试。');return}
+ lastSearch=Date.now();const b=el('mapSearchBtn');b.disabled=true;el('mapResults').replaceChildren();
+ msg('正在查询地点，公开地图缺少部分国内山峰点位…');
+ try{
+  const found=await placeSearch(q);
+  if(!found.items.length){msg('未找到该山峰。可使用「定位坐标」或直接地图点选。'+(found.errors?.length?' 搜索源可能限流。':''));return}
+  for(const item of found.items){
+   const button=document.createElement('button');button.type='button';button.textContent=item.name||q;
+   button.addEventListener('click',()=>{position(item.lat,item.lon,item.name||q);el('mapResults').replaceChildren()});
+   el('mapResults').append(button)
+  }
+  msg('搜索来源：'+found.source+'。请在地图上核实具体山顶观景位置，地名中心不一定是观景台。');
+ }catch(e){msg('地点搜索失败，可直接点击地图或使用坐标：'+e.message)}finally{b.disabled=false}
+});
+el('mapHeight').addEventListener('input',()=>{
+ el('mapApply').disabled=!(candidate&&el('mapHeight').value.trim()!==''&&
+  Number.isFinite(Number(el('mapHeight').value))&&Number(el('mapHeight').value)>=-500&&Number(el('mapHeight').value)<=9000)
+});
+el('mapApply').addEventListener('click',()=>{
+ if(!candidate)return;
+ const h=Number(el('mapHeight').value);
+ if(!el('mapHeight').value.trim()||!Number.isFinite(h)||h< -500||h>9000){msg('请确认观景高度。');return}
+ el('lat').value=n6(candidate.lat);el('lon').value=n6(candidate.lon);el('elev').value=String(Math.round(h));
+ msg('已填入预测条件。点击下方「重新预测」获取这个位置的云海预报。');
+ el('mapPanel').hidden=true;el('mapToggle').textContent='打开地图选点';
+ el('lat').scrollIntoView({behavior:'smooth',block:'center'});
+});
+})();
+</script>
+</body></html>
