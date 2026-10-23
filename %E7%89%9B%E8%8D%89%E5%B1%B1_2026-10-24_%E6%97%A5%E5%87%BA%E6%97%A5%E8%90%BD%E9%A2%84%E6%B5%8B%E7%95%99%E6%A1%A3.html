@@ -1,0 +1,76 @@
+<!doctype html><html lang="zh-CN"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><meta name="theme-color" content="#16374a"><title>牛草山 2026-10-24 预报快照留档</title><style>
+*{box-sizing:border-box}body{margin:0;background:#edf3f5;color:#183447;font:15px system-ui,-apple-system,"Microsoft YaHei",sans-serif}main{max-width:760px;margin:0 auto;padding:14px}header{background:linear-gradient(125deg,#11334a,#387589);border-radius:16px;padding:22px;color:#fff}h1{margin:4px 0;font-size:23px}h2{font-size:17px;margin:0 0 12px}p{line-height:1.6}section{background:white;border-radius:14px;padding:16px;margin:12px 0;box-shadow:0 2px 8px #142b3b0d}.sub{opacity:.8;font-size:13px}button{background:#123c57;color:white;border:0;border-radius:10px;padding:12px 15px;font-size:15px;cursor:pointer}button:disabled{opacity:.5}#download{background:#14624c}#copy{background:#415b69}.row{display:flex;gap:8px;flex-wrap:wrap}.status{background:#e9f1f5;border-radius:10px;padding:12px;line-height:1.65;white-space:pre-wrap}.warn{background:#fff3df;padding:10px;border-radius:9px;color:#72521a;font-size:13px}.grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:9px}.metric{background:#f1f5f7;padding:12px;border-radius:10px}.metric strong{display:block;font-size:16px;margin-top:4px}table{width:100%;border-collapse:collapse;font-size:12px}th,td{text-align:right;padding:8px 5px;border-bottom:1px solid #e2ebef;white-space:nowrap}th:first-child,td:first-child{text-align:left}.scroll{overflow:auto}small{color:#607684}code{overflow-wrap:anywhere}footer{text-align:center;color:#748994;font-size:12px;padding:12px}</style></head><body><main>
+<header><div class="sub">CLOUD SEA WATCH · VALIDATION SNAPSHOT</div><h1>牛草山 · 10月24日预报留档</h1><div>日出与日落双时段｜原始数据保存｜不修改现有预测器算法</div></header>
+<section><h2>固定验证条件</h2><div class="grid">
+<div class="metric">地点<strong>安徽牛草山</strong></div><div class="metric">日期<strong>2026-10-24</strong></div>
+<div class="metric">坐标（WGS84）<strong>31.044687°N<br>116.265979°E</strong></div>
+<div class="metric">观景高度<strong>1350 米</strong></div>
+<div class="metric">早晨复核<strong>04:00—09:00</strong></div><div class="metric">傍晚复核<strong>15:00—19:00</strong></div>
+</div><p class="warn">本页只用于锁定查询时刻的预报证据。运行后必须点击「下载预测快照 JSON」才会在手机上留档。明天重新查询会拿到更新预报，不能替代今天的快照。</p></section>
+<section><h2>采集操作</h2><div class="row"><button id="run">读取并冻结当前预报</button><button id="download" disabled>下载预测快照 JSON</button><button id="copy" disabled>复制简要摘要</button></div><p id="status" class="status">尚未采集。请在有网络的浏览器中点击“读取并冻结当前预报”。</p></section>
+<section><h2>日出 / 日落天气摘要</h2><div id="summaries">尚无预报数据。</div></section>
+<section><h2>垂直层数据检查</h2><p class="sub">保存 ECMWF 与 GFS 各气压层云量、相对湿度、温度、位势高度（含全部24小时原始返回），另保存两模式独立降雨、风场。不能根据云量推定真实云顶。</p><div id="profiles">等待查询。</div></section>
+<section><h2>明日实况反馈</h2><p>明天把采集的 JSON 文件连同群友的<strong>早晨实况</strong>和你本人<strong>傍晚实况</strong>发回聊天。建议记录准确时间、是否云海、是否“洗头”、是否云瀑、是否降雨及照片。事后再分析预报对不对。</p><p class="sub">已有对照：2026-10-23 17:30 用户反馈牛草山出现云海及云瀑，附有实拍。它是独立的上一日实况，不混入24日预测样本。</p></section>
+<footer>锋哥出品 · 预测快照实验工具 · 不是已经校准的云海概率</footer></main>
+<script>
+(()=>{'use strict';
+const $=x=>document.getElementById(x);
+const TARGET='2026-10-24',tz='Asia/Shanghai',lat=31.044687,lon=116.265979;
+const levG=[1000,975,950,925,900,875,850,825,800,775,750,725,700,675,650,625,600,575,550,525,500],levE=[1000,925,850,700,600,500];
+const MODELS=[{key:'ECMWF',model:'ecmwf_ifs025',endpoint:'https://api.open-meteo.com/v1/ecmwf',lev:levE},{key:'GFS',model:'gfs_global',endpoint:'https://api.open-meteo.com/v1/gfs',lev:levG}];
+let snapshot=null,busy=false;
+function params(base,vars,model){const u=new URL(base);const d={latitude:lat,longitude:lon,timezone:tz,start_date:TARGET,end_date:TARGET,hourly:vars};if(model)d.models=model;Object.entries(d).forEach(([k,v])=>u.searchParams.set(k,String(v)));return u.toString()}
+const finite=x=>typeof x==='number'&&Number.isFinite(x);
+const fmt=(x,d=0)=>finite(x)?x.toFixed(d):'无数据';
+const pad=x=>String(x).padStart(2,'0');
+const safe=s=>String(s).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+const sleep=ms=>new Promise(r=>setTimeout(r,ms));
+async function get(url){for(let attempt=0;attempt<2;attempt++){const controller=new AbortController();const id=setTimeout(()=>controller.abort(),16000);try{const res=await fetch(url,{signal:controller.signal});const j=await res.json();if(!res.ok||j.error)throw Error(j.reason||'HTTP '+res.status);return j}catch(err){if(attempt===1)throw err;await sleep(1100)}finally{clearTimeout(id)}}}
+function series(j,k,h){const t=TARGET+'T'+pad(h)+':00',i=j?.hourly?.time?.indexOf(t)??-1;return i>=0?j.hourly[k]?.[i]??null:null}
+function hrow(j,h){return {hour:pad(h)+':00',humidity2m:series(j,'relative_humidity_2m',h),lowCloud:series(j,'cloud_cover_low',h),totalCloud:series(j,'cloud_cover',h),visibilityMeters:series(j,'visibility',h),precipitationMm:series(j,'precipitation',h),windSpeedKmH:series(j,'wind_speed_10m',h),windDirectionDeg:series(j,'wind_direction_10m',h)}}
+function modeRow(j,h){return {hour:pad(h)+':00',precipitationMm:series(j,'precipitation',h),windSpeedKmH:series(j,'wind_speed_10m',h),windDirectionDeg:series(j,'wind_direction_10m',h),humidity2m:series(j,'relative_humidity_2m',h),lowCloud:series(j,'cloud_cover_low',h)}}
+function sliceRows(j,hours,fn){return hours.map(h=>fn(j,h))}
+function table(rows,kind){if(!rows.length)return '<p>无数据</p>';const surface=kind==='surface';return '<div class="scroll"><table><thead><tr><th>小时</th><th>湿度%</th><th>低云%</th><th>降雨mm</th><th>风km/h</th><th>风向°</th>'+(surface?'<th>能见度km</th>':'')+'</tr></thead><tbody>'+rows.map(r=>'<tr><td>'+r.hour+'</td><td>'+fmt(r.humidity2m)+'</td><td>'+fmt(r.lowCloud)+'</td><td>'+fmt(r.precipitationMm,1)+'</td><td>'+fmt(r.windSpeedKmH,1)+'</td><td>'+fmt(r.windDirectionDeg)+'</td>'+(surface?'<td>'+fmt(finite(r.visibilityMeters)?r.visibilityMeters/1000:null,1)+'</td>':'')+'</tr>').join('')+'</tbody></table></div>'}
+const hoursA=[4,5,6,7,8,9],hoursP=[15,16,17,18,19];
+function out(){
+ if(!snapshot)return;
+ const s=snapshot;
+ let q='';
+ for(const [label,hrs] of [['早晨 04:00—09:00',hoursA],['傍晚 15:00—19:00',hoursP]]){
+  q+='<h3>'+label+'</h3>';
+  if(s.datasets.surface.data)q+='<h4>综合地面格点</h4>'+table(sliceRows(s.datasets.surface.data,hrs,hrow),'surface');else q+='<p class="warn">综合地面格点：'+safe(s.datasets.surface.error||'无数据')+'</p>';
+  for(const m of MODELS){const a=s.datasets[m.key+'_surface'];q+='<h4>'+m.key+' · 独立模式</h4>';
+   q+=a.data?table(sliceRows(a.data,hrs,modeRow),'model'):'<p class="warn">'+safe(a.error||'无数据')+'</p>';
+  }
+ }
+ $('summaries').innerHTML=q;
+ let r='';
+ for(const m of MODELS){const a=s.datasets[m.key+'_vertical'];if(!a.data){r+='<p>'+m.key+'：'+safe(a.error||'无数据')+'</p>';continue}
+  const hour=17, j=a.data;
+  const rows=m.lev.map(p=>({p,rh:series(j,'relative_humidity_'+p+'hPa',hour),cloud:series(j,'cloud_cover_'+p+'hPa',hour),height:series(j,'geopotential_height_'+p+'hPa',hour)}));
+  const available=rows.filter(x=>finite(x.height)&&finite(x.rh)&&finite(x.cloud)).length;
+  r+='<p><strong>'+m.key+'</strong> · 17:00有效云量/湿度/高度组合 '+available+'/'+m.lev.length+' 层。原始JSON含全天各层逐小时数据。</p><div class="scroll"><table><thead><tr><th>气压层</th><th>高程m</th><th>湿度%</th><th>云量%</th></tr></thead><tbody>'+rows.map(x=>'<tr><td>'+x.p+'</td><td>'+fmt(x.height)+'</td><td>'+fmt(x.rh)+'</td><td>'+fmt(x.cloud)+'</td></tr>').join('')+'</tbody></table></div>';
+ }
+ $('profiles').innerHTML=r;
+}
+async function run(){if(busy)return;busy=true;snapshot=null;$('run').disabled=true;$('download').disabled=true;$('copy').disabled=true;const capture=new Date();
+ const datasets={};const reqs=[
+  {id:'surface',url:params('https://api.open-meteo.com/v1/forecast','relative_humidity_2m,cloud_cover_low,cloud_cover,visibility,precipitation,wind_speed_10m,wind_direction_10m')},
+  ...MODELS.map(m=>({id:m.key+'_surface',url:params(m.endpoint,'relative_humidity_2m,cloud_cover_low,precipitation,wind_speed_10m,wind_direction_10m',m.model)})),
+  ...MODELS.map(m=>({id:m.key+'_vertical',url:params(m.endpoint,m.lev.flatMap(p=>['relative_humidity_'+p+'hPa','cloud_cover_'+p+'hPa','geopotential_height_'+p+'hPa','temperature_'+p+'hPa']).join(','),m.model)}))
+ ];
+ for(let i=0;i<reqs.length;i++){const z=reqs[i];$('status').textContent='正在获取 '+(i+1)+'/'+reqs.length+'：'+z.id+'。失败会记录原因并继续。';
+  try{const d=await get(z.url);datasets[z.id]={url:z.url,data:d,error:null,receivedAt:new Date().toISOString()}}
+  catch(e){datasets[z.id]={url:z.url,data:null,error:String(e.message||e),receivedAt:new Date().toISOString()}}
+  if(i<reqs.length-1)await sleep(550);
+ }
+ snapshot={schema:'niucaoshan-cloud-sea-forecast-snapshot-v1',purpose:'2026-10-24 sunrise/sunset before-observation validation',targetDate:TARGET,coordinatesWGS84:{latitude:lat,longitude:lon},observationAltitudeMeters:1350,timezone:tz,captureStartedUtc:capture.toISOString(),captureCompletedUtc:new Date().toISOString(),capturedBeijingTime:new Intl.DateTimeFormat('sv-SE',{timeZone:tz,dateStyle:'short',timeStyle:'medium'}).format(new Date()),forecastNotObservation:true,comparisonWindowsBeijing:{morning:'04:00-09:00',evening:'15:00-19:00'},models:MODELS.map(m=>({name:m.key,model:m.model,pressureLevelsHpa:m.lev})),priorObservation:{date:'2026-10-23',timeBeijing:'17:30',reported:'sea of clouds and cloud waterfall'},datasets};
+ const success=Object.values(datasets).filter(d=>!!d.data).length;
+ $('status').textContent='采集结束（北京时间 '+snapshot.capturedBeijingTime+'）：成功 '+success+'/'+reqs.length+' 组，失败 '+(reqs.length-success)+' 组。\\n请立即点击「下载预测快照 JSON」保存；这是明天对照的凭据。';
+ $('download').disabled=false;$('copy').disabled=false;out();$('run').disabled=false;busy=false;
+}
+$('run').onclick=run;
+$('download').onclick=()=>{if(!snapshot)return;const blob=new Blob([JSON.stringify(snapshot,null,2)],{type:'application/json;charset=utf-8'}),url=URL.createObjectURL(blob),a=document.createElement('a');a.href=url;a.download='niucaoshan_forecast_2026-10-24_snapshot_'+snapshot.capturedBeijingTime.slice(0,10).replaceAll('-','')+'.json';document.body.append(a);a.click();a.remove();setTimeout(()=>URL.revokeObjectURL(url),1000)};
+$('copy').onclick=()=>{if(!snapshot)return;const msg='牛草山2026-10-24日出/日落预测快照\\n采集北京时间：'+snapshot.capturedBeijingTime+'\\n完成情况：'+Object.entries(snapshot.datasets).map(([k,v])=>k+' '+(v.data?'成功':'失败:'+v.error)).join('；')+'\\n详情见留档JSON';if(navigator.clipboard?.writeText)navigator.clipboard.writeText(msg).then(()=>$('status').textContent+='\\n简要摘要已复制。').catch(()=>alert('复制失败，请保存JSON'));else prompt('复制以下摘要',msg)};
+})();
+</script></body></html>
