@@ -1,7 +1,7 @@
 name: Cloud Sea Forecast Snapshots
 on:
   schedule:
-    # Beijing time 08:10 and 20:10; use UTC to avoid workflow UI timezone differences
+    # Beijing time around 08:10 and 20:10 (UTC schedule; may be delayed)
     - cron: '10 0,12 * * *'
   workflow_dispatch:
 permissions:
@@ -26,21 +26,25 @@ jobs:
         id: collect
         continue-on-error: true
         run: python scripts/collect.py --days 4 --output snapshots
-      - name: Commit snapshot files (even partially complete)
+      - name: Calculate and freeze offline evaluation scores
+        id: score
+        continue-on-error: true
+        run: python scripts/score.py --input snapshots --output scores
+      - name: Commit snapshot and score files (even partially complete)
         shell: bash
         run: |
           git config user.name 'github-actions[bot]'
           git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
-          git add snapshots/
+          mkdir -p snapshots scores
+          git add snapshots/ scores/
           if ! git diff --cached --quiet; then
-            git commit -m "archive: forecast snapshot $(date -u +%Y-%m-%dT%H:%M:%SZ)"
-            # Scheduled commits are expected to be serialised by concurrency group.
+            git commit -m "archive: weather and score snapshot $(date -u +%Y-%m-%dT%H:%M:%SZ)"
             git push
           else
             echo "No files to commit"
           fi
-      - name: Report partial API failures
-        if: steps.collect.outcome == 'failure'
+      - name: Report collector or scoring failures
+        if: steps.collect.outcome == 'failure' || steps.score.outcome == 'failure'
         run: |
-          echo 'Some API sources failed. Any partial snapshot was still committed.' >&2
+          echo 'One or more archive steps failed; partial outputs were committed.' >&2
           exit 1
