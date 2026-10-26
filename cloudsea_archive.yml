@@ -1,0 +1,46 @@
+name: Cloud Sea Forecast Snapshots
+on:
+  schedule:
+    # Beijing time 08:10 and 20:10; use UTC to avoid workflow UI timezone differences
+    - cron: '10 0,12 * * *'
+  workflow_dispatch:
+permissions:
+  contents: write
+concurrency:
+  group: cloudsea-snapshot-default
+  cancel-in-progress: false
+jobs:
+  archive:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+        with:
+          persist-credentials: true
+      - name: Setup Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: Collect and archive forecast data
+        id: collect
+        continue-on-error: true
+        run: python scripts/collect.py --days 4 --output snapshots
+      - name: Commit snapshot files (even partially complete)
+        shell: bash
+        run: |
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git add snapshots/
+          if ! git diff --cached --quiet; then
+            git commit -m "archive: forecast snapshot $(date -u +%Y-%m-%dT%H:%M:%SZ)"
+            # Scheduled commits are expected to be serialised by concurrency group.
+            git push
+          else
+            echo "No files to commit"
+          fi
+      - name: Report partial API failures
+        if: steps.collect.outcome == 'failure'
+        run: |
+          echo 'Some API sources failed. Any partial snapshot was still committed.' >&2
+          exit 1
