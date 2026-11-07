@@ -1,0 +1,220 @@
+{
+  "schema": "cloudsea-offline-score-v1",
+  "scoring_version": "offline-port-v1.1.0 (V4.13.1 logic; parity not certified)",
+  "algorithm_source": "V4.13 base logic + V4.13.1 below-terrain filtering",
+  "parity_with_live_web": "NOT_YET_CERTIFIED; browser sunrise and raw API request timing can differ",
+  "sunrise_method": "NOAA approximate algorithm (not Open-Meteo daily.sunrise; archive did not record sunrise)",
+  "source_snapshot": "snapshots/taizijian/2026-11/20261107T205502+0800_taizijian_2026-11-07_to_2026-11-10.json",
+  "source_sha256": "24658fc2a34b443bda311f212403642450b5d3eaa62b58157218fe3d4a1e1fdd",
+  "source_capture_beijing": "2026-11-07T20:55:09+08:00",
+  "site": {
+    "label": "太子尖",
+    "lat": 30.1756,
+    "lon": 118.8997,
+    "altitude_m": 1557
+  },
+  "scored_at_utc": "2026-11-07T12:55:09+00:00",
+  "scores_are_probabilities": false,
+  "daily_results": [
+    {
+      "target_date": "2026-11-07",
+      "window": "04:00-08:00 Asia/Shanghai",
+      "sunrise_used": "2026-11-07T06:23",
+      "formation_index": 58,
+      "viewability_index": 29,
+      "risk_title": "山顶洗头风险偏高",
+      "formation_factors": [
+        {
+          "name": "低层水汽（近地面替代）",
+          "weight": 15,
+          "value": 96.47999999999999
+        },
+        {
+          "name": "逆温稳定度",
+          "weight": 25,
+          "value": 30
+        },
+        {
+          "name": "逐层低云",
+          "weight": 25,
+          "value": 60.0
+        },
+        {
+          "name": "风速条件",
+          "weight": 15,
+          "value": 65
+        }
+      ],
+      "formation_available_weight": 80,
+      "near_viewpoint_cloud_pct": 79.58,
+      "below_viewpoint_cloud_pct": null,
+      "visibility_grid_min_m": 220.0,
+      "rain": {
+        "cap": 65,
+        "modes_available": 2,
+        "maximums_mm": [
+          0.1,
+          1.0
+        ]
+      },
+      "cloud_discount_factor": 0.5015999999999999,
+      "profile_models_available": 2,
+      "cloud_models_available": 2,
+      "composite_inputs": {
+        "rh": 98.6,
+        "low": 100.0,
+        "wind": 13.919999999999998
+      }
+    },
+    {
+      "target_date": "2026-11-08",
+      "window": "04:00-08:00 Asia/Shanghai",
+      "sunrise_used": "2026-11-08T06:23",
+      "formation_index": 62,
+      "viewability_index": 30,
+      "risk_title": "山顶洗头风险偏高",
+      "formation_factors": [
+        {
+          "name": "低层水汽（近地面替代）",
+          "weight": 15,
+          "value": 99.0
+        },
+        {
+          "name": "逆温稳定度",
+          "weight": 25,
+          "value": 30
+        },
+        {
+          "name": "逐层低云",
+          "weight": 25,
+          "value": 57.599999999999994
+        },
+        {
+          "name": "风速条件",
+          "weight": 15,
+          "value": 85
+        }
+      ],
+      "formation_available_weight": 80,
+      "near_viewpoint_cloud_pct": 84.91999999999999,
+      "below_viewpoint_cloud_pct": null,
+      "visibility_grid_min_m": 1640.0,
+      "rain": {
+        "cap": 30,
+        "modes_available": 2,
+        "maximums_mm": [
+          1.6,
+          2.9
+        ]
+      },
+      "cloud_discount_factor": 0.5301,
+      "profile_models_available": 2,
+      "cloud_models_available": 2,
+      "composite_inputs": {
+        "rh": 100.0,
+        "low": 100.0,
+        "wind": 8.8
+      }
+    },
+    {
+      "target_date": "2026-11-09",
+      "window": "04:00-08:00 Asia/Shanghai",
+      "sunrise_used": "2026-11-09T06:24",
+      "formation_index": 59,
+      "viewability_index": 25,
+      "risk_title": "山顶洗头风险偏高",
+      "formation_factors": [
+        {
+          "name": "低层水汽（近地面替代）",
+          "weight": 15,
+          "value": 98.27999999999999
+        },
+        {
+          "name": "逆温稳定度",
+          "weight": 25,
+          "value": 30
+        },
+        {
+          "name": "逐层低云",
+          "weight": 25,
+          "value": 60.0
+        },
+        {
+          "name": "风速条件",
+          "weight": 15,
+          "value": 65
+        }
+      ],
+      "formation_available_weight": 80,
+      "near_viewpoint_cloud_pct": 90.64,
+      "below_viewpoint_cloud_pct": null,
+      "visibility_grid_min_m": 620.0,
+      "rain": {
+        "cap": 45,
+        "modes_available": 2,
+        "maximums_mm": [
+          0.6,
+          0.2
+        ]
+      },
+      "cloud_discount_factor": 0.4224,
+      "profile_models_available": 2,
+      "cloud_models_available": 2,
+      "composite_inputs": {
+        "rh": 99.6,
+        "low": 100.0,
+        "wind": 14.819999999999999
+      }
+    },
+    {
+      "target_date": "2026-11-10",
+      "window": "04:00-08:00 Asia/Shanghai",
+      "sunrise_used": "2026-11-10T06:25",
+      "formation_index": 37,
+      "viewability_index": 37,
+      "risk_title": "观赏条件偏弱",
+      "formation_factors": [
+        {
+          "name": "低层水汽（近地面替代）",
+          "weight": 15,
+          "value": 61.56000000000001
+        },
+        {
+          "name": "逆温稳定度",
+          "weight": 25,
+          "value": 30
+        },
+        {
+          "name": "逐层低云",
+          "weight": 25,
+          "value": 0
+        },
+        {
+          "name": "风速条件",
+          "weight": 15,
+          "value": 85
+        }
+      ],
+      "formation_available_weight": 80,
+      "near_viewpoint_cloud_pct": 0.0,
+      "below_viewpoint_cloud_pct": null,
+      "visibility_grid_min_m": 25240.0,
+      "rain": {
+        "cap": null,
+        "modes_available": 2,
+        "maximums_mm": [
+          0.0,
+          0.0
+        ]
+      },
+      "cloud_discount_factor": 1,
+      "profile_models_available": 2,
+      "cloud_models_available": 2,
+      "composite_inputs": {
+        "rh": 79.2,
+        "low": 0.0,
+        "wind": 4.8
+      }
+    }
+  ]
+}
